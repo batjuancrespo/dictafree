@@ -60,6 +60,8 @@ async function callGeminiAPI(modelName, promptParts, isTextPrompt = false) {
 export async function transcribeAndPolishAudio(base64Audio) {
     console.groupCollapsed(`[Proceso de Dictado] ${new Date().toLocaleTimeString()}`);
     
+    const MODEL_TO_USE = 'gemini-2.0-flash-lite'; // <-- MODELO REVERTIDO
+
     let transcribedText = '';
     try {
         setStatus('Transcribiendo audio...', 'processing');
@@ -67,7 +69,7 @@ export async function transcribeAndPolishAudio(base64Audio) {
             { text: "Transcribe el siguiente audio a texto con la MÁXIMA LITERALIDAD POSIBLE. Transcribe palabras como 'punto', 'coma', 'punto y aparte' como texto, no como signos de puntuación. El objetivo es una transcripción fiel palabra por palabra, incluyendo los signos de puntuación que el hablante dicte (ej. si dice una coma, transcribe ',')." },
             { inline_data: { mime_type: "audio/webm", data: base64Audio } }
         ];
-        transcribedText = await callGeminiAPI('gemini-1.5-flash-latest', transcriptPromptParts, false);
+        transcribedText = await callGeminiAPI(MODEL_TO_USE, transcriptPromptParts, false);
         console.log("%c[PASO 1] Transcripción literal recibida:", "font-weight: bold; color: blue;", JSON.stringify(transcribedText));
     } catch (e) {
         console.error("Error en la transcripción:", e);
@@ -88,7 +90,7 @@ export async function transcribeAndPolishAudio(base64Audio) {
             "${transcribedText}"`
         }];
         
-        polishedByAI = await callGeminiAPI('gemini-1.5-flash-latest', polishPromptParts, true);
+        polishedByAI = await callGeminiAPI(MODEL_TO_USE, polishPromptParts, true);
         console.log("%c[PASO 2] Texto pulido por IA:", "font-weight: bold; color: purple;", JSON.stringify(polishedByAI));
     } catch (e) {
         console.error("Error en el pulido por IA:", e);
@@ -97,23 +99,15 @@ export async function transcribeAndPolishAudio(base64Audio) {
     }
 
     const cleanedText = cleanupArtifacts(polishedByAI);
-    console.log("%c[PASO 3] Texto limpio de artefactos:", "font-weight: bold; color: teal;", JSON.stringify(cleanedText));
-
     const textWithPunctuation = applyPunctuationRules(cleanedText);
-    console.log("%c[PASO 4] Texto con puntuación de reglas (JS):", "font-weight: bold; color: green;", JSON.stringify(textWithPunctuation));
-
     let finalProcessing = capitalizeSentencesProperly(textWithPunctuation);
     finalProcessing = applyAllUserCorrections(finalProcessing, AppState.customVocabulary);
-    console.log("%c[PASO 5] Texto final tras capitalizar y correcciones de usuario:", "font-weight: bold; color: red;", JSON.stringify(finalProcessing));
     
     console.groupEnd();
     return finalProcessing;
 }
 
-/**
- * Carga el vocabulario del usuario desde Firestore.
- * @param {string} userId - El ID del usuario.
- */
+// ... (El resto de las funciones de Firestore no cambian)
 export async function loadUserVocabularyFromFirestore(userId) {
     if (!userId || !db) {
         AppState.customVocabulary = {};
@@ -122,7 +116,6 @@ export async function loadUserVocabularyFromFirestore(userId) {
         return;
     }
 
-    console.log(`DEBUG: Cargando vocabulario desde Firestore para usuario: ${userId}`);
     const vocabDocRef = doc(db, "userVocabularies", userId);
     try {
         const docSnap = await getDoc(vocabDocRef);
@@ -131,10 +124,8 @@ export async function loadUserVocabularyFromFirestore(userId) {
             AppState.customVocabulary = firestoreData.rulesMap || {};
             AppState.learnedCorrections = firestoreData.learnedMap || {};
             AppState.commonMistakeNormalization = firestoreData.normalizations || {};
-            console.log("DEBUG: Vocabulario cargado. Reglas:", Object.keys(AppState.customVocabulary).length);
         } else {
             AppState.customVocabulary = {};
-            console.log("DEBUG: No existe documento de vocabulario. Se usará uno vacío.");
         }
     } catch (error) {
         console.error("Error cargando vocabulario desde Firestore:", error);
@@ -143,16 +134,9 @@ export async function loadUserVocabularyFromFirestore(userId) {
     }
 }
 
-/**
- * Guarda el vocabulario del usuario en Firestore.
- */
 export async function saveUserVocabularyToFirestore() {
-    if (!AppState.currentUserId || !db) {
-        console.error("DEBUG: No hay ID de usuario o conexión a DB para guardar vocabulario.");
-        return;
-    }
+    if (!AppState.currentUserId || !db) return;
 
-    console.log(`DEBUG: Guardando vocabulario en Firestore para ${AppState.currentUserId}.`);
     const vocabDocRef = doc(db, "userVocabularies", AppState.currentUserId);
     const dataToSave = {
         rulesMap: AppState.customVocabulary,
@@ -162,7 +146,6 @@ export async function saveUserVocabularyToFirestore() {
 
     try {
         await setDoc(vocabDocRef, dataToSave, { merge: true });
-        console.log("DEBUG: Vocabulario guardado en Firestore exitosamente.");
     } catch (error) {
         console.error("Error guardando vocabulario del usuario:", error);
         setStatus("Error al guardar las personalizaciones.", "error", 3000);
