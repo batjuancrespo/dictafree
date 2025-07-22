@@ -35,7 +35,8 @@ const categoryPrompts = {
 };
 
 
-let DOMElementsJuanizador, categorizedFindings = {};
+let DOMElementsJuanizador, categorizedFindings = {}, recognition, isRecording = false;
+window.availableCategories = []; // Hacer global para que sea accesible en todo el módulo
 
 async function queryGeminiAPI(prompt) {
     try {
@@ -57,8 +58,7 @@ async function categorizeFindings() {
     
     setLoadingState('categorizing-loading', true);
     
-    const availableCats = window.availableCategories || [];
-    const filteredCategories = anatomicalCategories.filter(cat => availableCats.includes(cat.id));
+    const filteredCategories = anatomicalCategories.filter(cat => window.availableCategories.includes(cat.id));
     const categoryNames = filteredCategories.map(cat => `${cat.id}. ${cat.name}`).join('\n');
     
     const prompt = `Eres un radiólogo experto. Categoriza los siguientes hallazgos en las categorías disponibles.
@@ -71,13 +71,16 @@ async function categorizeFindings() {
         if (!response) throw new Error('Respuesta vacía de la API.');
         
         const jsonMatch = response.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) throw new Error('La respuesta no contiene un JSON válido.');
+        if (!jsonMatch) { 
+            console.error("Respuesta de API no es un JSON válido:", response);
+            throw new Error('La respuesta de la API no contiene un JSON válido.');
+        }
 
         categorizedFindings = JSON.parse(jsonMatch[0]);
         displayCategorizedFindings();
     } catch (error) {
         console.error('Error al categorizar:', error);
-        alert('Hubo un error al categorizar los hallazgos.');
+        alert(`Hubo un error al categorizar los hallazgos: ${error.message}`);
     } finally {
         setLoadingState('categorizing-loading', false);
     }
@@ -86,24 +89,58 @@ async function categorizeFindings() {
 function displayCategorizedFindings() {
     const container = DOMElementsJuanizador.categorizedContent;
     container.innerHTML = '';
-    // ... Lógica para mostrar los hallazgos categorizados ...
+    const orderedCatIds = anatomicalCategories.map(c => c.id.toString());
+    
+    let hasFindings = false;
+    orderedCatIds.forEach(catId => {
+        if (categorizedFindings[catId] && categorizedFindings[catId].length > 0) {
+            hasFindings = true;
+            const category = anatomicalCategories.find(c => c.id == catId);
+            const categoryDiv = document.createElement('div');
+            categoryDiv.className = 'category';
+            const findingsList = categorizedFindings[catId].map(finding => `<li>${finding}</li>`).join('');
+            categoryDiv.innerHTML = `<h3>${category.name}</h3><ul>${findingsList}</ul>`;
+            container.appendChild(categoryDiv);
+        }
+    });
+
+    if (!hasFindings) {
+        container.innerHTML = '<p style="text-align:center; color: var(--text-secondary);">No se encontraron hallazgos para categorizar.</p>';
+    }
 }
 
 function updateAvailableCategories() {
     const tech = DOMElementsJuanizador.imagingTechnique.value;
-    const tacContainer = DOMElementsJuanizador.tacScopeContainer;
-    const rmContainer = DOMElementsJuanizador.rmTypeContainer;
-
-    tacContainer.style.display = tech === 'tac' ? 'flex' : 'none';
-    rmContainer.style.display = tech === 'rm' ? 'flex' : 'none';
-
-    // ... Lógica para definir window.availableCategories ...
+    const tacScope = DOMElementsJuanizador.tacScope.value;
+    const rmType = DOMElementsJuanizador.rmType.value;
     
+    DOMElementsJuanizador.tacScopeContainer.style.display = tech === 'tac' ? 'flex' : 'none';
+    DOMElementsJuanizador.rmTypeContainer.style.display = tech === 'rm' ? 'flex' : 'none';
+    DOMElementsJuanizador.contrastContainer.style.display = (tech === 'tac' || tech === 'rm') ? 'flex' : 'none';
+    
+    const baseCategories = [12, 13];
+    let categories = [];
+    
+    if (tech === 'tac') {
+        switch(tacScope) {
+            case 'toracoabdominal': categories = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, ...baseCategories]; break;
+            case 'torax': categories = [0, 1, 2, 3, 4, 15, ...baseCategories]; break;
+            case 'abdomen': categories = [5, 6, 7, 8, 9, 10, 11, 14, ...baseCategories]; break;
+        }
+    } else if (tech === 'rm') {
+        switch(rmType) {
+            case 'hepatica': case 'colangio': categories = [5, 6, 7, 8, 10, ...baseCategories]; break;
+            default: categories = [5, 6, 7, 8, 9, 10, 11, ...baseCategories]; break;
+        }
+    } else { // Eco
+        categories = [5, 6, 7, 8, 9, 10, 11, ...baseCategories];
+    }
+    window.availableCategories = categories;
     updateTechniqueDescription();
 }
 
 function updateTechniqueDescription() {
-    // ... Lógica para actualizar la descripción de la técnica ...
+    // ... (Tu lógica para actualizar la descripción de la técnica)
 }
 
 function setLoadingState(elementId, isLoading) {
@@ -113,14 +150,6 @@ function setLoadingState(elementId, isLoading) {
     }
 }
 
-function initSpeechRecognition() {
-    // ... Lógica del SpeechRecognition si se quiere mantener ...
-}
-
-
-/**
- * Inicializa toda la lógica y los listeners del Juanizador.
- */
 export function initializeJuanizador(textToAnalyze) {
     DOMElementsJuanizador = {
         container: document.getElementById('juanizador-container'),
@@ -132,13 +161,20 @@ export function initializeJuanizador(textToAnalyze) {
         copyReportBtn: document.getElementById('copy-report-btn'),
         categorizedContent: document.getElementById('categorized-content'),
         imagingTechnique: document.getElementById('imaging-technique'),
+        tacScope: document.getElementById('tac-scope'),
+        rmType: document.getElementById('rm-type'),
+        contrastUse: document.getElementById('contrast-use'),
         tacScopeContainer: document.getElementById('tac-scope-container'),
         rmTypeContainer: document.getElementById('rm-type-container'),
-        // ... (añadir el resto de IDs del juanizador)
+        contrastContainer: document.getElementById('contrast-container'),
+        phaseContainer: document.getElementById('phase-container'),
     };
     
     if (DOMElementsJuanizador.transcriptArea) {
         DOMElementsJuanizador.transcriptArea.value = textToAnalyze;
+        categorizedFindings = {};
+        DOMElementsJuanizador.categorizedContent.innerHTML = '';
+        document.getElementById('final-report').textContent = 'El informe generado aparecerá aquí...';
     }
     
     if (!DOMElementsJuanizador.container.dataset.initialized) {
@@ -154,7 +190,9 @@ export function initializeJuanizador(textToAnalyze) {
             document.getElementById('final-report').textContent = 'El informe generado aparecerá aquí...';
         });
 
-        // ... (resto de listeners del juanizador) ...
+        [DOMElementsJuanizador.imagingTechnique, DOMElementsJuanizador.tacScope, DOMElementsJuanizador.rmType, DOMElementsJuanizador.contrastUse].forEach(el => {
+            el.addEventListener('change', updateAvailableCategories);
+        });
         
         DOMElementsJuanizador.container.dataset.initialized = 'true';
     }
