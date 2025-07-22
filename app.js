@@ -49,7 +49,10 @@ export function initializeDictationApp() {
     } = DOMElements;
 
     // Se usa un 'flag' para asegurar que los listeners solo se asignen una vez.
-    if (startRecordBtn.dataset.listenerAttached) return;
+    if (startRecordBtn.dataset.listenerAttached) {
+        console.log("DEBUG: Listeners ya asignados. Saltando re-inicialización.");
+        return;
+    }
 
     startRecordBtn.addEventListener('click', () => {
         if (AppState.isProcessingClick) return;
@@ -67,6 +70,7 @@ export function initializeDictationApp() {
     });
 
     copyPolishedTextBtn.addEventListener('click', () => copyFullReportToClipboard(true));
+    
     resetReportBtn.addEventListener('click', () => {
         if (confirm('¿Seguro que quieres borrar TODO el informe y la técnica?')) {
             headerArea.value = '';
@@ -76,7 +80,9 @@ export function initializeDictationApp() {
     });
 
     juanizarBtn.addEventListener('click', switchToJuanizadorView);
+    
     correctTextSelectionBtn.addEventListener('click', handleCorrectTextSelection);
+    
     manageVocabButton.addEventListener('click', openVocabManager);
     manageVocabButton.disabled = false;
 
@@ -86,6 +92,7 @@ export function initializeDictationApp() {
             updateCopyButtonState();
         }
     });
+
     clearHeaderButton.addEventListener('click', () => {
         headerArea.value = "";
         updateCopyButtonState();
@@ -123,21 +130,26 @@ function main() {
 
     const { themeSwitch } = DOMElements;
     const preferredTheme = localStorage.getItem('theme') || 'dark';
+    
     applyTheme(preferredTheme);
     setAccentRGB();
     
     if (themeSwitch) {
-        themeSwitch.addEventListener('change', () => applyTheme(themeSwitch.checked ? 'dark' : 'light'));
+        themeSwitch.addEventListener('change', () => {
+            applyTheme(themeSwitch.checked ? 'dark' : 'light');
+        });
     }
     
     new MutationObserver(setAccentRGB).observe(document.body, { attributes: true, attributeFilter: ['data-theme'] });
 
     setupVocabModalListeners();
 
-    // Llamamos a initializeAuth directamente para asegurar que el listener onAuthStateChanged
-    // se configure inmediatamente, evitando condiciones de carrera.
+    // Llamamos a initializeAuth directamente. Esto asegura que el listener
+    // onAuthStateChanged se configure inmediatamente, evitando condiciones de carrera.
     initializeAuth();
 }
 
 // Iniciar la aplicación cuando el DOM esté completamente cargado.
 document.addEventListener('DOMContentLoaded', main);
+
+console.log("DEBUG: app.js loaded and DOMContentLoaded listener attached.");
