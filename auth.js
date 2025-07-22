@@ -27,8 +27,11 @@ function handleLogin(e) {
     loginButton.disabled = true;
     loginErrorDiv.textContent = '';
     signInWithEmailAndPassword(auth, loginEmailInput.value, loginPasswordInput.value)
-        .catch(error => loginErrorDiv.textContent = getFirebaseErrorMessage(error))
-        .finally(() => loginButton.disabled = false);
+        .catch(error => {
+            loginErrorDiv.textContent = getFirebaseErrorMessage(error);
+            console.error("Login Error:", error);
+        })
+        .finally(() => { loginButton.disabled = false; });
 }
 
 function handleSignup(e) {
@@ -37,8 +40,11 @@ function handleSignup(e) {
     signupButton.disabled = true;
     signupErrorDiv.textContent = '';
     createUserWithEmailAndPassword(auth, signupEmailInput.value, signupPasswordInput.value)
-        .catch(error => signupErrorDiv.textContent = getFirebaseErrorMessage(error))
-        .finally(() => signupButton.disabled = false);
+        .catch(error => {
+            signupErrorDiv.textContent = getFirebaseErrorMessage(error);
+            console.error("Signup Error:", error);
+        })
+        .finally(() => { signupButton.disabled = false; });
 }
 
 function handleLogout() {
@@ -65,6 +71,7 @@ function setupAuthListeners() {
 }
 
 function handleAuthStateChange(user) {
+    console.log("DEBUG: handleAuthStateChange triggered. User:", user ? user.uid : 'null');
     const { authContainer, appContainer, userDisplaySpan } = DOMElements;
     if (user) {
         AppState.currentUserId = user.uid;
@@ -82,7 +89,6 @@ function handleAuthStateChange(user) {
                 isAppInitialized = true;
             }
         });
-
     } else {
         AppState.currentUserId = null;
         document.body.classList.remove('logged-in');
@@ -99,11 +105,10 @@ function handleAuthStateChange(user) {
     }
 }
 
-/**
- * Inicializa todo el sistema de autenticación.
- */
 export function initializeAuth() {
     setupAuthListeners();
     onAuthStateChanged(auth, handleAuthStateChange);
     console.log("DEBUG: Sistema de autenticación inicializado y listener de estado asignado.");
 }
+
+console.log("DEBUG: auth.js loaded");
