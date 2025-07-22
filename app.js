@@ -92,18 +92,20 @@ export function initializeDictationApp() {
     polishedTextarea.addEventListener('input', updateCopyButtonState);
 
     document.addEventListener('keydown', (event) => {
-        if (!DOMElements.authContainer || DOMElements.authContainer.style.display !== 'none') return; // Solo si está logueado
-        if (event.shiftKey && (event.metaKey || event.ctrlKey) && event.key === 'Shift') {
-            event.preventDefault();
-            startRecordBtn.click();
-        }
-        if (event.shiftKey && event.altKey && event.key.toUpperCase() === 'P') {
-            event.preventDefault();
-            pauseResumeBtn.click();
+        // Solo ejecutar atajos si el usuario está logueado y la vista de dictado está activa
+        if (document.body.classList.contains('logged-in') && DOMElements.appContainer.style.display !== 'none') {
+            if (event.shiftKey && (event.metaKey || event.ctrlKey) && event.key === 'Shift') {
+                event.preventDefault();
+                startRecordBtn.click();
+            }
+            if (event.shiftKey && event.altKey && event.key.toUpperCase() === 'P') {
+                event.preventDefault();
+                pauseResumeBtn.click();
+            }
         }
     });
 
-    // Marcar como inicializado
+    // Marcar como inicializado para no volver a asignar listeners
     startRecordBtn.dataset.listenerAttached = 'true';
 
     updateButtonStates('initial');
@@ -121,16 +123,18 @@ function main() {
     applyTheme(preferredTheme);
     setAccentRGB();
     
-    themeSwitch.addEventListener('change', () => applyTheme(themeSwitch.checked ? 'dark' : 'light'));
+    if (themeSwitch) {
+        themeSwitch.addEventListener('change', () => applyTheme(themeSwitch.checked ? 'dark' : 'light'));
+    }
+    
     new MutationObserver(setAccentRGB).observe(document.body, { attributes: true, attributeFilter: ['data-theme'] });
 
     setupVocabModalListeners();
 
-    // --- CAMBIO CLAVE ---
-    // Llamamos a initializeAuth directamente. Ya no esperamos un evento.
-    // Esto asegura que el listener onAuthStateChanged se configure inmediatamente.
+    // Llamamos a initializeAuth directamente para asegurar que el listener onAuthStateChanged
+    // se configure inmediatamente, evitando condiciones de carrera.
     initializeAuth();
-}
+} // <--- ESTA ES LA LLAVE QUE FALTABA
 
 // Iniciar la aplicación cuando el DOM esté completamente cargado.
-document.addEventListener('DOMContentLoaded', main);```
+document.addEventListener('DOMContentLoaded', main);
