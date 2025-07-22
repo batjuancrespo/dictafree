@@ -29,13 +29,15 @@ function switchToJuanizadorView() {
     initializeJuanizador(textToAnalyze);
 }
 
+// Se asigna a 'window' para que el módulo del juanizador pueda llamarla globalmente.
 window.switchToDictationView = function() {
     DOMElements.juanizadorContainer.style.display = 'none';
     DOMElements.appContainer.style.display = 'flex';
-}
+};
 
 /**
  * Asigna los listeners de eventos a los elementos de la aplicación de dictado.
+ * Esta función es exportada para ser llamada desde el módulo de autenticación.
  */
 export function initializeDictationApp() {
     console.log("DEBUG: Inicializando la lógica de la app de dictado.");
@@ -46,7 +48,8 @@ export function initializeDictationApp() {
         headerArea, polishedTextarea, techniqueButtonsContainer, clearHeaderButton
     } = DOMElements;
 
-    if (startRecordBtn.dataset.listenerAttached) return; // Evitar re-asignar listeners
+    // Se usa un 'flag' para asegurar que los listeners solo se asignen una vez.
+    if (startRecordBtn.dataset.listenerAttached) return;
 
     startRecordBtn.addEventListener('click', () => {
         if (AppState.isProcessingClick) return;
@@ -113,7 +116,7 @@ export function initializeDictationApp() {
 }
 
 /**
- * Punto de entrada que se ejecuta cuando el DOM está listo.
+ * Punto de entrada principal que se ejecuta cuando el DOM está listo.
  */
 function main() {
     console.log("DEBUG: DOM listo. Aplicación principal iniciándose.");
@@ -134,7 +137,7 @@ function main() {
     // Llamamos a initializeAuth directamente para asegurar que el listener onAuthStateChanged
     // se configure inmediatamente, evitando condiciones de carrera.
     initializeAuth();
-} // <--- ESTA ES LA LLAVE QUE FALTABA
+}
 
 // Iniciar la aplicación cuando el DOM esté completamente cargado.
 document.addEventListener('DOMContentLoaded', main);
