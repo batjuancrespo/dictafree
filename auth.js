@@ -72,7 +72,6 @@ function handleAuthStateChange(user) {
         document.body.classList.add('logged-in');
         authContainer.style.display = 'none';
         
-        // Inicialmente muestra la app de dictado
         window.switchToDictationView();
         
         userDisplaySpan.textContent = user.email || 'Usuario';
@@ -106,4 +105,5 @@ function handleAuthStateChange(user) {
 export function initializeAuth() {
     setupAuthListeners();
     onAuthStateChanged(auth, handleAuthStateChange);
+    console.log("DEBUG: Sistema de autenticación inicializado y listener de estado asignado.");
 }
