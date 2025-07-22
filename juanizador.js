@@ -1,5 +1,6 @@
 // juanizador.js
 // Contiene toda la lógica para la sección del Asistente de Informes (Juanizador).
+// VERSIÓN CON LOGS DE DEPURACIÓN AGRESIVOS
 
 import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
 
@@ -39,20 +40,25 @@ let DOMElementsJuanizador, categorizedFindings = {};
 window.availableCategories = [];
 
 async function queryGeminiAPI(prompt) {
+    console.log("%c[API Call] Enviando prompt a Gemini:", "color: blue;", prompt);
     try {
         const result = await model.generateContent(prompt);
-        return result.response.text();
+        const responseText = result.response.text();
+        console.log("%c[API Response] Respuesta recibida de Gemini:", "color: green;", responseText);
+        return responseText;
     } catch (error) {
-        console.error('Error al consultar la API de Gemini:', error);
+        console.error("%c[API Error] Error en la llamada a Gemini:", "color: red; font-weight: bold;", error);
         alert("Error de comunicación con la API del Juanizador. Revisa la consola.");
         return null;
     }
 }
 
 async function categorizeFindings() {
+    console.log("DEBUG: Iniciando categorizeFindings...");
     const transcript = DOMElementsJuanizador.transcriptArea.value.trim();
     if (!transcript) {
         alert('No hay hallazgos para categorizar.');
+        console.log("DEBUG: categorizeFindings terminado - sin texto.");
         return;
     }
     
@@ -68,7 +74,7 @@ async function categorizeFindings() {
     
     try {
         const response = await queryGeminiAPI(prompt);
-        if (!response) throw new Error('Respuesta vacía de la API.');
+        if (response === null) throw new Error('La API devolvió null.');
         
         const jsonMatch = response.match(/\{[\s\S]*\}/);
         if (!jsonMatch) { 
@@ -77,6 +83,7 @@ async function categorizeFindings() {
         }
 
         categorizedFindings = JSON.parse(jsonMatch[0]);
+        console.log("DEBUG: Hallazgos categorizados con éxito:", categorizedFindings);
         displayCategorizedFindings();
     } catch (error) {
         console.error('Error al categorizar:', error);
@@ -86,17 +93,18 @@ async function categorizeFindings() {
     }
 }
 
-/**
- * FUNCIÓN RESTAURADA: Genera el informe completo a partir de los hallazgos categorizados.
- */
 async function generateCompleteReport() {
-    if (Object.keys(categorizedFindings).length === 0) {
+    console.log("%c--- INICIANDO GENERACIÓN DE INFORME ---", "color: orange; font-weight: bold; font-size: 1.2em;");
+    
+    if (!categorizedFindings || Object.keys(categorizedFindings).length === 0) {
         alert('Primero debe categorizar los hallazgos.');
+        console.log("DEBUG: generateCompleteReport detenido - no hay hallazgos categorizados.");
         return;
     }
     
     setLoadingState('report-loading', true);
     DOMElementsJuanizador.finalReport.textContent = 'Generando informe, por favor espere...';
+    console.log("DEBUG: Estado de carga activado.");
 
     const tech = DOMElementsJuanizador.imagingTechnique.value;
     const vocabularyInstructions = {
@@ -105,12 +113,17 @@ async function generateCompleteReport() {
         'eco': "Utiliza terminología de Ecografía. Describe los hallazgos en términos de ecogenicidad (ej: hipoecoico, anecoico, hiperecogénico) y menciona artefactos relevantes como sombra o refuerzo."
     };
     const modalityInstruction = vocabularyInstructions[tech] || "Redacta un párrafo conciso y profesional.";
+    console.log("DEBUG: Instrucción de modalidad seleccionada:", modalityInstruction);
 
     let reportOrder = anatomicalCategories.filter(c => window.availableCategories.includes(c.id));
+    console.log("DEBUG: Orden de categorías para el informe:", reportOrder.map(c => c.name));
     
     let fullReport = '';
+    // Usamos un bucle for...of para manejar correctamente las promesas en serie
     for (const category of reportOrder) {
         const findings = categorizedFindings[category.id.toString()] || [];
+        console.log(`%cProcesando Categoría: ${category.name}`, "color: purple;", "Hallazgos:", findings);
+        
         const prompt = `${categoryPrompts[category.id]}
 Instrucción de estilo: ${modalityInstruction}
 Hallazgos encontrados: ${findings.length > 0 ? findings.join('. ') : 'Ninguno'}
@@ -118,23 +131,35 @@ Ahora, redacta el párrafo final de forma profesional y concisa, aplicando estri
         
         const sectionReport = await queryGeminiAPI(prompt);
         if (sectionReport && sectionReport.trim()) {
+            console.log(`DEBUG: Reporte para sección "${category.name}" generado:`, sectionReport.trim());
             fullReport += `${sectionReport.trim()}\n`;
+        } else {
+            console.log(`DEBUG: No se generó reporte para la sección "${category.name}" (respuesta vacía).`);
         }
     }
     
+    console.log("DEBUG: Todas las secciones procesadas. Generando conclusión...");
     const allFindings = Object.values(categorizedFindings).flat();
-    const conclusionPrompt = `Eres un radiólogo experto.
+    if (allFindings.length > 0) {
+        const conclusionPrompt = `Eres un radiólogo experto.
 Instrucción de estilo: ${modalityInstruction}
 Basado en estos hallazgos:
 ${allFindings.join('. ')}
 Genera una conclusión concisa (máx. 2-3 líneas) con los 2-3 hallazgos más relevantes, usando el vocabulario correcto según la instrucción de estilo. Para el resto, usa "Ver informe descriptivo". Si no hay hallazgos, devuelve: "No se observan alteraciones radiológicas significativas."`;
-    
-    const conclusion = await queryGeminiAPI(conclusionPrompt);
-    if (conclusion) {
-        fullReport += `\nCONCLUSIÓN:\n${conclusion.trim()}`;
+        
+        const conclusion = await queryGeminiAPI(conclusionPrompt);
+        if (conclusion) {
+            console.log("DEBUG: Conclusión generada:", conclusion.trim());
+            fullReport += `\nCONCLUSIÓN:\n${conclusion.trim()}`;
+        } else {
+            console.log("DEBUG: No se generó conclusión (respuesta vacía).");
+        }
+    } else {
+        console.log("DEBUG: No hay hallazgos para generar una conclusión.");
     }
     
-    DOMElementsJuanizador.finalReport.textContent = fullReport;
+    console.log("%c--- FINALIZANDO GENERACIÓN DE INFORME ---", "color: orange; font-weight: bold; font-size: 1.2em;");
+    DOMElementsJuanizador.finalReport.textContent = fullReport || "No se pudo generar el informe. Revisa la consola.";
     setLoadingState('report-loading', false);
 }
 
@@ -185,7 +210,7 @@ function updateAvailableCategories() {
             case 'hepatica': case 'colangio': categories = [5, 6, 7, 8, 10, ...baseCategories]; break;
             default: categories = [5, 6, 7, 8, 9, 10, 11, ...baseCategories]; break;
         }
-    } else { // Eco
+    } else {
         categories = [5, 6, 7, 8, 9, 10, 11, ...baseCategories];
     }
     window.availableCategories = categories;
@@ -204,6 +229,7 @@ function setLoadingState(elementId, isLoading) {
 }
 
 export function initializeJuanizador(textToAnalyze) {
+    console.log("DEBUG: Inicializando Juanizador...");
     if (!DOMElementsJuanizador) {
         DOMElementsJuanizador = {
             container: document.getElementById('juanizador-container'),
@@ -224,6 +250,7 @@ export function initializeJuanizador(textToAnalyze) {
             contrastContainer: document.getElementById('contrast-container'),
             phaseContainer: document.getElementById('phase-container'),
         };
+        console.log("DEBUG: Elementos del DOM del Juanizador seleccionados.");
     }
     
     if (DOMElementsJuanizador.transcriptArea) {
@@ -234,13 +261,13 @@ export function initializeJuanizador(textToAnalyze) {
     }
     
     if (!DOMElementsJuanizador.container.dataset.initialized) {
+        console.log("DEBUG: Asignando listeners del Juanizador por primera vez.");
         DOMElementsJuanizador.backToDictationBtn.addEventListener('click', () => {
             window.switchToDictationView();
         });
         
         DOMElementsJuanizador.categorizeBtn.addEventListener('click', categorizeFindings);
         
-        // <-- LISTENER AÑADIDO
         DOMElementsJuanizador.generateReportBtn.addEventListener('click', generateCompleteReport);
         
         DOMElementsJuanizador.clearBtn.addEventListener('click', () => {
@@ -254,6 +281,9 @@ export function initializeJuanizador(textToAnalyze) {
         });
         
         DOMElementsJuanizador.container.dataset.initialized = 'true';
+        console.log("DEBUG: Listeners del Juanizador asignados.");
+    } else {
+        console.log("DEBUG: Juanizador ya inicializado. Saltando asignación de listeners.");
     }
     
     updateAvailableCategories();
