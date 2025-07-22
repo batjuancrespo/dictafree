@@ -16,8 +16,6 @@ try {
     db = getFirestore(app);
     auth = getAuth(app);
     console.log("DEBUG: Firebase inicializado y servicios exportados desde firebase.js.");
-    // Dispara el evento personalizado para que app.js sepa que está listo
-    document.dispatchEvent(new CustomEvent('firebaseReady'));
 } catch (error) {
     console.error("Error crítico inicializando Firebase en firebase.js:", error);
     alert("Error crítico: No se pudo inicializar Firebase. La aplicación no funcionará.");
