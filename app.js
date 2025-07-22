@@ -46,6 +46,8 @@ export function initializeDictationApp() {
         headerArea, polishedTextarea, techniqueButtonsContainer, clearHeaderButton
     } = DOMElements;
 
+    if (startRecordBtn.dataset.listenerAttached) return; // Evitar re-asignar listeners
+
     startRecordBtn.addEventListener('click', () => {
         if (AppState.isProcessingClick) return;
         AppState.isProcessingClick = true;
@@ -90,6 +92,7 @@ export function initializeDictationApp() {
     polishedTextarea.addEventListener('input', updateCopyButtonState);
 
     document.addEventListener('keydown', (event) => {
+        if (!DOMElements.authContainer || DOMElements.authContainer.style.display !== 'none') return; // Solo si está logueado
         if (event.shiftKey && (event.metaKey || event.ctrlKey) && event.key === 'Shift') {
             event.preventDefault();
             startRecordBtn.click();
@@ -99,6 +102,9 @@ export function initializeDictationApp() {
             pauseResumeBtn.click();
         }
     });
+
+    // Marcar como inicializado
+    startRecordBtn.dataset.listenerAttached = 'true';
 
     updateButtonStates('initial');
     updateCopyButtonState();
@@ -120,8 +126,11 @@ function main() {
 
     setupVocabModalListeners();
 
-    document.addEventListener('firebaseReady', initializeAuth, { once: true });
+    // --- CAMBIO CLAVE ---
+    // Llamamos a initializeAuth directamente. Ya no esperamos un evento.
+    // Esto asegura que el listener onAuthStateChanged se configure inmediatamente.
+    initializeAuth();
 }
 
-// Iniciar la aplicación
-main();
+// Iniciar la aplicación cuando el DOM esté completamente cargado.
+document.addEventListener('DOMContentLoaded', main);```
