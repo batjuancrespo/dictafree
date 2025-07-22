@@ -25,7 +25,7 @@ const categoryPrompts = {
     6: "Describe SOLO los hallazgos en vesícula y vía biliar. Si no hay hallazgos, devuelve EXACTAMENTE: 'Vesícula biliar normodistendida, de paredes finas, sin evidencia de litiasis en su interior. Vía biliar intra y extrahepática no dilatada.'",
     7: "Describe SOLO los hallazgos en el páncreas. Si no hay hallazgos, devuelve EXACTAMENTE: 'Páncreas homogéneo y bien definido sin lesiones focales ni dilatación del ducto pancreático principal.'",
     8: "Describe SOLO los hallazgos en bazo, suprarrenales, riñones, vías excretoras y vejiga. Si no hay hallazgos, devuelve EXACTAMENTE: 'Bazo, glándulas suprarrenales y riñones de tamaño, morfología y densidad normales, sin evidencia de lesiones focales. Vías excretoras, uréteres y vejiga urinaria sin alteraciones radiológicas significativas.'",
-    9: "Describe SOLO los hallazgos en cámara gástrica y asas intestinales. Si no hay hallazgos, devuelve EXACTAMENTE: 'Cámara gástrica moderadamente distendida sin hallazgos relevantes. Asas intestinales de delgado y marco cólico sin engrosamientos parietales ni cambios de calibre significativos.'",
+    9: "Describe SOLO los hallazgos en cámara gástrica y asas intestinales. Si no hay hallazgos, devuelve EXACTAMENTE: 'Cámara gástrica moderadamente distendida sin hallazgos relevantes. Asas de intestino delgado y marco cólico sin engrosamientos parietales ni cambios de calibre significativos.'",
     10: "Describe SOLO líquido libre o adenopatías intra-abdominales. Si no hay hallazgos, devuelve EXACTAMENTE: 'No se observa líquido libre ni adenopatías intra-abdominales de aspecto patológico.'",
     11: "Describe SOLO hallazgos en aorta y grandes vasos mesentéricos. Si no hay hallazgos, devuelve EXACTAMENTE: 'Aorta y grandes vasos mesentéricos de calibre normal, sin hallazgos significativos.'",
     12: "Describe SOLO hallazgos en el esqueleto axial. Si no hay hallazgos, devuelve EXACTAMENTE: 'Esqueleto axial incluido en el estudio sin lesiones focales ni anomalías morfológicas relevantes.'",
@@ -35,8 +35,8 @@ const categoryPrompts = {
 };
 
 
-let DOMElementsJuanizador, categorizedFindings = {}, recognition, isRecording = false;
-window.availableCategories = []; // Hacer global para que sea accesible en todo el módulo
+let DOMElementsJuanizador, categorizedFindings = {};
+window.availableCategories = [];
 
 async function queryGeminiAPI(prompt) {
     try {
@@ -85,6 +85,59 @@ async function categorizeFindings() {
         setLoadingState('categorizing-loading', false);
     }
 }
+
+/**
+ * FUNCIÓN RESTAURADA: Genera el informe completo a partir de los hallazgos categorizados.
+ */
+async function generateCompleteReport() {
+    if (Object.keys(categorizedFindings).length === 0) {
+        alert('Primero debe categorizar los hallazgos.');
+        return;
+    }
+    
+    setLoadingState('report-loading', true);
+    DOMElementsJuanizador.finalReport.textContent = 'Generando informe, por favor espere...';
+
+    const tech = DOMElementsJuanizador.imagingTechnique.value;
+    const vocabularyInstructions = {
+        'tac': "Utiliza terminología de Tomografía Computarizada (TAC). Describe los hallazgos en términos de densidad (ej: hipodenso, hiperdenso) y realce tras el contraste.",
+        'rm': "Utiliza terminología de Resonancia Magnética (RM). Describe los hallazgos en términos de intensidad de señal (ej: hipointenso, hiperintenso) y su comportamiento en las diferentes secuencias.",
+        'eco': "Utiliza terminología de Ecografía. Describe los hallazgos en términos de ecogenicidad (ej: hipoecoico, anecoico, hiperecogénico) y menciona artefactos relevantes como sombra o refuerzo."
+    };
+    const modalityInstruction = vocabularyInstructions[tech] || "Redacta un párrafo conciso y profesional.";
+
+    let reportOrder = anatomicalCategories.filter(c => window.availableCategories.includes(c.id));
+    
+    let fullReport = '';
+    for (const category of reportOrder) {
+        const findings = categorizedFindings[category.id.toString()] || [];
+        const prompt = `${categoryPrompts[category.id]}
+Instrucción de estilo: ${modalityInstruction}
+Hallazgos encontrados: ${findings.length > 0 ? findings.join('. ') : 'Ninguno'}
+Ahora, redacta el párrafo final de forma profesional y concisa, aplicando estrictamente la instrucción de estilo.`;
+        
+        const sectionReport = await queryGeminiAPI(prompt);
+        if (sectionReport && sectionReport.trim()) {
+            fullReport += `${sectionReport.trim()}\n`;
+        }
+    }
+    
+    const allFindings = Object.values(categorizedFindings).flat();
+    const conclusionPrompt = `Eres un radiólogo experto.
+Instrucción de estilo: ${modalityInstruction}
+Basado en estos hallazgos:
+${allFindings.join('. ')}
+Genera una conclusión concisa (máx. 2-3 líneas) con los 2-3 hallazgos más relevantes, usando el vocabulario correcto según la instrucción de estilo. Para el resto, usa "Ver informe descriptivo". Si no hay hallazgos, devuelve: "No se observan alteraciones radiológicas significativas."`;
+    
+    const conclusion = await queryGeminiAPI(conclusionPrompt);
+    if (conclusion) {
+        fullReport += `\nCONCLUSIÓN:\n${conclusion.trim()}`;
+    }
+    
+    DOMElementsJuanizador.finalReport.textContent = fullReport;
+    setLoadingState('report-loading', false);
+}
+
 
 function displayCategorizedFindings() {
     const container = DOMElementsJuanizador.categorizedContent;
@@ -140,7 +193,7 @@ function updateAvailableCategories() {
 }
 
 function updateTechniqueDescription() {
-    // ... (Tu lógica para actualizar la descripción de la técnica)
+    // Implementa aquí la lógica si es necesario
 }
 
 function setLoadingState(elementId, isLoading) {
@@ -151,30 +204,33 @@ function setLoadingState(elementId, isLoading) {
 }
 
 export function initializeJuanizador(textToAnalyze) {
-    DOMElementsJuanizador = {
-        container: document.getElementById('juanizador-container'),
-        backToDictationBtn: document.getElementById('backToDictationBtn'),
-        transcriptArea: document.getElementById('transcript'),
-        categorizeBtn: document.getElementById('categorize-btn'),
-        clearBtn: document.getElementById('clear-btn'),
-        generateReportBtn: document.getElementById('generate-report-btn'),
-        copyReportBtn: document.getElementById('copy-report-btn'),
-        categorizedContent: document.getElementById('categorized-content'),
-        imagingTechnique: document.getElementById('imaging-technique'),
-        tacScope: document.getElementById('tac-scope'),
-        rmType: document.getElementById('rm-type'),
-        contrastUse: document.getElementById('contrast-use'),
-        tacScopeContainer: document.getElementById('tac-scope-container'),
-        rmTypeContainer: document.getElementById('rm-type-container'),
-        contrastContainer: document.getElementById('contrast-container'),
-        phaseContainer: document.getElementById('phase-container'),
-    };
+    if (!DOMElementsJuanizador) {
+        DOMElementsJuanizador = {
+            container: document.getElementById('juanizador-container'),
+            backToDictationBtn: document.getElementById('backToDictationBtn'),
+            transcriptArea: document.getElementById('transcript'),
+            categorizeBtn: document.getElementById('categorize-btn'),
+            clearBtn: document.getElementById('clear-btn'),
+            generateReportBtn: document.getElementById('generate-report-btn'),
+            copyReportBtn: document.getElementById('copy-report-btn'),
+            categorizedContent: document.getElementById('categorized-content'),
+            finalReport: document.getElementById('final-report'),
+            imagingTechnique: document.getElementById('imaging-technique'),
+            tacScope: document.getElementById('tac-scope'),
+            rmType: document.getElementById('rm-type'),
+            contrastUse: document.getElementById('contrast-use'),
+            tacScopeContainer: document.getElementById('tac-scope-container'),
+            rmTypeContainer: document.getElementById('rm-type-container'),
+            contrastContainer: document.getElementById('contrast-container'),
+            phaseContainer: document.getElementById('phase-container'),
+        };
+    }
     
     if (DOMElementsJuanizador.transcriptArea) {
         DOMElementsJuanizador.transcriptArea.value = textToAnalyze;
         categorizedFindings = {};
         DOMElementsJuanizador.categorizedContent.innerHTML = '';
-        document.getElementById('final-report').textContent = 'El informe generado aparecerá aquí...';
+        DOMElementsJuanizador.finalReport.textContent = 'El informe generado aparecerá aquí...';
     }
     
     if (!DOMElementsJuanizador.container.dataset.initialized) {
@@ -184,14 +240,17 @@ export function initializeJuanizador(textToAnalyze) {
         
         DOMElementsJuanizador.categorizeBtn.addEventListener('click', categorizeFindings);
         
+        // <-- LISTENER AÑADIDO
+        DOMElementsJuanizador.generateReportBtn.addEventListener('click', generateCompleteReport);
+        
         DOMElementsJuanizador.clearBtn.addEventListener('click', () => {
             DOMElementsJuanizador.transcriptArea.value = '';
             DOMElementsJuanizador.categorizedContent.innerHTML = '';
-            document.getElementById('final-report').textContent = 'El informe generado aparecerá aquí...';
+            DOMElementsJuanizador.finalReport.textContent = 'El informe generado aparecerá aquí...';
         });
 
         [DOMElementsJuanizador.imagingTechnique, DOMElementsJuanizador.tacScope, DOMElementsJuanizador.rmType, DOMElementsJuanizador.contrastUse].forEach(el => {
-            el.addEventListener('change', updateAvailableCategories);
+            if(el) el.addEventListener('change', updateAvailableCategories);
         });
         
         DOMElementsJuanizador.container.dataset.initialized = 'true';
