@@ -7,11 +7,27 @@ import { DOMElements } from './domElements.js';
 import { saveUserVocabularyToFirestore } from './api.js';
 
 /**
- * Muestra un mensaje de estado en la interfaz.
- * @param {string} message - El mensaje a mostrar.
- * @param {'idle'|'processing'|'success'|'error'} type - El tipo de estado.
- * @param {number} duration - Cuánto tiempo (ms) mostrar el mensaje antes de volver a "listo". 0 para permanente.
+ * ¡FUNCIÓN MODIFICADA! Aplica el tema (oscuro/claro) a la aplicación.
  */
+export function applyTheme(theme) {
+    document.body.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+    if (DOMElements.themeSwitch) {
+        DOMElements.themeSwitch.checked = theme === 'dark';
+    }
+    
+    // Nueva lógica para mostrar/ocultar las imágenes grandes en la sidebar
+    if (DOMElements.themeImageLight && DOMElements.themeImageDark) {
+        if (theme === 'dark') {
+            DOMElements.themeImageDark.style.display = 'block';
+            DOMElements.themeImageLight.style.display = 'none';
+        } else {
+            DOMElements.themeImageDark.style.display = 'none';
+            DOMElements.themeImageLight.style.display = 'block';
+        }
+    }
+}
+
 export function setStatus(message, type = "idle", duration = 0) {
     if (!DOMElements.statusDiv) return;
     DOMElements.statusDiv.textContent = message;
@@ -25,10 +41,6 @@ export function setStatus(message, type = "idle", duration = 0) {
     }
 }
 
-/**
- * Actualiza el estado de habilitado/deshabilitado y el texto de los botones.
- * @param {'initial'|'recording'|'paused'|'processing_audio'|'error_processing'|'success_processing'} state - El estado actual de la aplicación.
- */
 export function updateButtonStates(state) {
     const { startRecordBtn, pauseResumeBtn, retryProcessBtn, copyPolishedTextBtn, correctTextSelectionBtn, audioPlaybackSection, polishedTextarea } = DOMElements;
 
@@ -82,9 +94,6 @@ export function updateButtonStates(state) {
     }
 }
 
-/**
- * Actualiza la apariencia del botón de copiar para mostrar si el texto está sincronizado.
- */
 export function updateCopyButtonState() {
     if (!DOMElements.copyPolishedTextBtn) return;
     const currentText = getCombinedText();
@@ -136,16 +145,6 @@ export async function copyFullReportToClipboard(showStatus = true) {
     }
 }
 
-export function applyTheme(theme) {
-    document.body.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
-    if (DOMElements.themeSwitch) DOMElements.themeSwitch.checked = theme === 'dark';
-    if (DOMElements.mainTitleImage && DOMElements.mainTitleImageDark) {
-        DOMElements.mainTitleImage.style.display = theme === 'light' ? 'inline-block' : 'none';
-        DOMElements.mainTitleImageDark.style.display = theme === 'dark' ? 'inline-block' : 'none';
-    }
-}
-
 export function setAccentRGB() {
     try {
         const bodyStyles = getComputedStyle(document.body);
@@ -160,9 +159,6 @@ export function setAccentRGB() {
         console.warn("No se pudo establecer --accent-color-rgb:", e);
     }
 }
-
-
-// --- Lógica del Modal de Vocabulario ---
 
 export function openVocabManager() {
     if (!DOMElements.vocabManagerModal) return;
