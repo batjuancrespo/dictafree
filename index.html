@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="style.css">
     
     <script>
+      // Esta configuración se pone en el objeto global 'window' para que
+      // nuestro módulo firebase.js pueda acceder a ella al inicializarse.
       window.firebaseConfig = {
          apiKey: "AIzaSyA_VQH1y-px8-QF3gMw3VOPjiiU1OefDBo", // EJEMPLO, USA TU API KEY REAL
          authDomain: "almacena-correcciones-dictado.firebaseapp.com",
@@ -28,16 +30,29 @@
             <form id="login-form" class="auth-form">
                 <h2>Iniciar Sesión</h2>
                 <div id="login-error" class="auth-error-message"></div>
-                <div><label for="login-email">Email:</label><input type="email" id="login-email" required></div>
-                <div><label for="login-password">Contraseña:</label><input type="password" id="login-password" required></div>
+                <div>
+                    <label for="login-email">Email:</label>
+                    <input type="email" id="login-email" required>
+                </div>
+                <div>
+                    <label for="login-password">Contraseña:</label>
+                    <input type="password" id="login-password" required>
+                </div>
                 <button type="submit" id="loginButton">Iniciar Sesión</button>
                 <p class="auth-switch">¿No tienes cuenta? <a href="#" id="showSignupLink">Regístrate</a></p>
             </form>
+    
             <form id="signup-form" class="auth-form" style="display: none;">
                 <h2>Crear Cuenta</h2>
                 <div id="signup-error" class="auth-error-message"></div>
-                <div><label for="signup-email">Email:</label><input type="email" id="signup-email" required></div>
-                <div><label for="signup-password">Contraseña (mín. 6 caracteres):</label><input type="password" id="signup-password" required minlength="6"></div>
+                <div>
+                    <label for="signup-email">Email:</label>
+                    <input type="email" id="signup-email" required>
+                </div>
+                <div>
+                    <label for="signup-password">Contraseña (mín. 6 caracteres):</label>
+                    <input type="password" id="signup-password" required minlength="6">
+                </div>
                 <button type="submit" id="signupButton">Registrarse</button>
                 <p class="auth-switch">¿Ya tienes cuenta? <a href="#" id="showLoginLink">Inicia Sesión</a></p>
             </form>
@@ -53,7 +68,9 @@
             <button id="logoutButton">Cerrar Sesión</button>
         </div>
         <div class="app-wrapper"> 
-            <div id="title-frame"><h1>Dictado Radiológico <small>(by JCP)</small></h1></div>
+            <div id="title-frame">
+                <h1>Dictado Radiológico <small>(by JCP)</small></h1>
+            </div>
             <div class="app-layout"> 
                 <div class="main-column">
                     <div class="container controls">
@@ -68,7 +85,9 @@
                         </div>
                         <p id="recordingTimeDisplay"></p>
                         <p id="status" class="status-idle">Listo</p>
-                        <div id="volumeMeterContainer" style="margin-top:15px; display: none;"><div id="volumeMeterBar"></div></div>
+                        <div id="volumeMeterContainer" style="margin-top:15px; display: none;">
+                            <div id="volumeMeterBar"></div>
+                        </div>
                     </div>
                     <div class="container"> 
                         <h3>Técnica Aplicada:</h3>
@@ -86,14 +105,34 @@
                         <h3>Ajustes</h3>
                         <div class="theme-switch-wrapper">
                             <label class="theme-switch-label" for="themeSwitch">Tema Oscuro</label>
-                            <label class="theme-switch"><input type="checkbox" id="themeSwitch"><span class="slider"></span></label>
+                            <label class="theme-switch">
+                                <input type="checkbox" id="themeSwitch">
+                                <span class="slider"></span>
+                            </label>
                         </div>
-                        <div class="button-group" style="margin-top: 20px;"><button id="manageVocabButton" class="btn-blue" disabled>Gestionar Vocabulario</button></div>
+                        <div class="button-group" style="margin-top: 20px;">
+                            <button id="manageVocabButton" class="btn-blue" disabled>Gestionar Vocabulario</button>
+                        </div>
                     </div>
                     <div class="container technique-section"> 
                         <h3>Seleccionar Técnica</h3>
                         <div id="techniqueButtons">
-                            <!-- ... (Aquí van todos tus botones de técnica) ... -->
+                            <div class="technique-group">
+                                <button class="btn-tech-red" data-technique-text="Se realiza exploración abdominal tras la administración endovenosa de contraste con adquisición de imágenes en fase arterial y portal.">Abd Art+Portal</button>
+                                <button class="btn-tech-red" data-technique-text="Se realiza exploración abdominal tras la administración endovenosa de contraste con adquisición de imágenes en fase portal.">Abd Portal</button>
+                                <button class="btn-tech-red" data-technique-text="Se realiza exploración toracoabdominal tras la administración endovenosa de contraste con adquisición de imágenes en fase arterial y portal.">Tórax+Abd Art+Portal</button>
+                                <button class="btn-tech-red" data-technique-text="Se realiza exploración sin administración endovenosa de contraste con adquisición de imágenes en reposo y durante maniobra de Valsalva.">Abd Hernia</button>
+                                <button class="btn-tech-red" data-technique-text="Se realiza exploración sin y tras la administración endovenosa de contraste con adquisición de imágenes en fase arterial y portal.">Abd 3 Fases</button>
+                                <button class="btn-tech-blue" data-technique-text="Exploración ecográfica con sonda multifrecuencia.">Eco Abd</button>
+                            </div>
+                            <div class="technique-group">
+                                <button class="btn-tech-yellow" data-technique-text="Se realiza exploración abdominal con secuencias potenciadas en T1 en fase y fuera de fase, T2 sin y con saturación grasa, difusión y estudio dinámico tras la administración endovenosa de contraste.">RM Hepática</button>
+                                <button class="btn-tech-yellow" data-technique-text="Se realiza exploración abdominal con secuencias potenciadas en T1 en fase y fuera de fase, T2 sin y con saturación grasa, estudio dinámico tras la administración endovenosa de contraste completándose la valoración con cortes radiales respecto al colédoco orientados a la valoración de la via biliar.">ColangioRM</button>
+                                <button class="btn-tech-yellow" data-technique-text="Se realiza exploración abdominal con secuencias potenciadas en T2, difusión y estudio dinámico tras la administración endovenosa de contraste previa distensión de las asas intestinales. Exploración orientada a la valoración de asas de intestino delgado.">EnteroRM</button>
+                                <button class="btn-tech-yellow" data-technique-text="Se realiza exploración pélvica con secuencias potenciadas en T2 sin y con saturación grasa y difusión.">RM Fístulas</button>
+                                <button class="btn-tech-yellow" data-technique-text="Se realiza exploración pélvica con secuencias potenciadas en T2 sin y con saturación grasa en los tres planos del espacio, difusión y estudio dinámico tras la administración endovenosa de contraste.">RM Neo Pelvis</button>
+                                <button id="clearHeaderButton" class="btn-tech-gray">Borrar Técnica</button>
+                            </div>
                         </div>
                     </div>
                     <div class="container audio-playback-section" style="display: none;"> 
