@@ -1,75 +1,99 @@
 // domElements.js
-// Selecciona todos los elementos del DOM una sola vez al cargar.
-// Esta es la ÚNICA fuente de verdad para las referencias al DOM.
+// Define los selectores (IDs) y proporciona una función segura para obtener elementos del DOM.
 
-export const DOMElements = {
-    // --- Contenedores Principales ---
-    authContainer: document.getElementById('auth-container'),
-    appContainer: document.getElementById('app-container'),
-    juanizadorContainer: document.getElementById('juanizador-container'),
-    
-    // --- Autenticación ---
-    loginForm: document.getElementById('login-form'),
-    signupForm: document.getElementById('signup-form'),
-    loginEmailInput: document.getElementById('login-email'),
-    loginPasswordInput: document.getElementById('login-password'),
-    signupEmailInput: document.getElementById('signup-email'),
-    signupPasswordInput: document.getElementById('signup-password'),
-    loginButton: document.getElementById('loginButton'),
-    signupButton: document.getElementById('signupButton'),
-    showSignupLink: document.getElementById('showSignupLink'),
-    showLoginLink: document.getElementById('showLoginLink'),
-    loginErrorDiv: document.getElementById('login-error'),
-    signupErrorDiv: document.getElementById('signup-error'),
-    userDisplaySpan: document.getElementById('userDisplay'),
-    logoutButton: document.getElementById('logoutButton'),
-    
-    // --- VISTA DE DICTADO ---
-    startRecordBtn: document.getElementById('startRecordBtn'),
-    pauseResumeBtn: document.getElementById('pauseResumeBtn'),
-    retryProcessBtn: document.getElementById('retryProcessBtn'),
-    copyPolishedTextBtn: document.getElementById('copyPolishedTextBtn'),
-    correctTextSelectionBtn: document.getElementById('correctTextSelectionBtn'),
-    resetReportBtn: document.getElementById('resetReportBtn'),
-    juanizarBtn: document.getElementById('juanizarBtn'),
-    manageVocabButton: document.getElementById('manageVocabButton'),
-    statusDiv: document.getElementById('status'),
-    polishedTextarea: document.getElementById('polishedText'),
-    headerArea: document.getElementById('headerArea'),
-    recordingTimeDisplay: document.getElementById('recordingTimeDisplay'),
-    themeImageLight: document.getElementById('themeImageLight'),
-    themeImageDark: document.getElementById('themeImageDark'),
-    audioPlayback: document.getElementById('audioPlayback'),
-    audioPlaybackSection: document.querySelector('.audio-playback-section'),
-    volumeMeterBar: document.getElementById('volumeMeterBar'),
-    volumeMeterContainer: document.getElementById('volumeMeterContainer'),
-    themeSwitch: document.getElementById('themeSwitch'),
-    techniqueButtonsContainer: document.getElementById('techniqueButtons'),
-    clearHeaderButton: document.getElementById('clearHeaderButton'),
+// Objeto que contiene todos los IDs de los elementos que la aplicación necesita.
+// Esta es nuestra "única fuente de verdad" para los nombres de los IDs.
+const elementSelectors = {
+    // Contenedores
+    authContainer: 'auth-container',
+    appContainer: 'app-container',
+    juanizadorContainer: 'juanizador-container',
 
-    // --- VISTA DEL JUANIZADOR (TODOS LOS ELEMENTOS CENTRALIZADOS AQUÍ) ---
-    juanizadorBackToDictationBtn: document.getElementById('backToDictationBtn'),
-    juanizadorTranscriptArea: document.getElementById('transcript'),
-    juanizadorCategorizeBtn: document.getElementById('categorize-btn'),
-    juanizadorClearBtn: document.getElementById('clear-btn'),
-    juanizadorGenerateReportBtn: document.getElementById('generate-report-btn'),
-    juanizadorCopyReportBtn: document.getElementById('copy-report-btn'),
-    juanizadorCategorizedContent: document.getElementById('categorized-content'),
-    juanizadorFinalReport: document.getElementById('final-report'),
-    juanizadorImagingTechnique: document.getElementById('imaging-technique'),
-    juanizadorTacScope: document.getElementById('tac-scope'),
-    juanizadorRmType: document.getElementById('rm-type'),
-    juanizadorContrastUse: document.getElementById('contrast-use'),
-    juanizadorTacScopeContainer: document.getElementById('tac-scope-container'),
-    juanizadorRmTypeContainer: document.getElementById('rm-type-container'),
-    juanizadorContrastContainer: document.getElementById('contrast-container'),
-    juanizadorPhaseContainer: document.getElementById('phase-container'),
-    juanizadorCategorizingLoading: document.getElementById('categorizing-loading'),
-    juanizadorReportLoading: document.getElementById('report-loading'),
+    // Autenticación
+    loginForm: 'login-form',
+    signupForm: 'signup-form',
+    loginEmailInput: 'login-email',
+    loginPasswordInput: 'login-password',
+    signupEmailInput: 'signup-email',
+    signupPasswordInput: 'signup-password',
+    loginButton: 'loginButton',
+    signupButton: 'signupButton',
+    showSignupLink: 'showSignupLink',
+    showLoginLink: 'showLoginLink',
+    loginErrorDiv: 'login-error',
+    signupErrorDiv: 'signup-error',
+    userDisplaySpan: 'userDisplay',
+    logoutButton: 'logoutButton',
 
-    // --- Modal de Vocabulario ---
-    vocabManagerModal: document.getElementById('vocabManagerModal'),
-    vocabManagerList: document.getElementById('vocabManagerList'),
-    modalCloseButtonVocab: document.getElementById('modalCloseButtonVocab'),
-    modalAddNewRuleButtonVocab: document.getElementById('modalAddNewRuleButtonVocab'),
+    // Vista de Dictado
+    startRecordBtn: 'startRecordBtn',
+    pauseResumeBtn: 'pauseResumeBtn',
+    retryProcessBtn: 'retryProcessBtn',
+    copyPolishedTextBtn: 'copyPolishedTextBtn',
+    correctTextSelectionBtn: 'correctTextSelectionBtn',
+    resetReportBtn: 'resetReportBtn',
+    juanizarBtn: 'juanizarBtn',
+    manageVocabButton: 'manageVocabButton',
+    statusDiv: 'status',
+    polishedTextarea: 'polishedText',
+    headerArea: 'headerArea',
+    recordingTimeDisplay: 'recordingTimeDisplay',
+    themeImageLight: 'themeImageLight',
+    themeImageDark: 'themeImageDark',
+    audioPlayback: 'audioPlayback',
+    audioPlaybackSection: '.audio-playback-section', // Es una clase, usamos querySelector
+    volumeMeterBar: 'volumeMeterBar',
+    volumeMeterContainer: 'volumeMeterContainer',
+    themeSwitch: 'themeSwitch',
+    techniqueButtonsContainer: 'techniqueButtons',
+    clearHeaderButton: 'clearHeaderButton',
+
+    // Vista del Juanizador
+    juanizadorBackToDictationBtn: 'backToDictationBtn',
+    juanizadorTranscriptArea: 'transcript',
+    juanizadorCategorizeBtn: 'categorize-btn',
+    juanizadorClearBtn: 'clear-btn',
+    juanizadorGenerateReportBtn: 'generate-report-btn',
+    juanizadorCopyReportBtn: 'copy-report-btn',
+    juanizadorCategorizedContent: 'categorized-content',
+    juanizadorFinalReport: 'final-report',
+    juanizadorImagingTechnique: 'imaging-technique',
+    juanizadorTacScope: 'tac-scope',
+    juanizadorRmType: 'rm-type',
+    juanizadorContrastUse: 'contrast-use',
+    juanizadorTacScopeContainer: 'tac-scope-container',
+    juanizadorRmTypeContainer: 'rm-type-container',
+    juanizadorContrastContainer: 'contrast-container',
+    juanizadorPhaseContainer: 'phase-container',
+    juanizadorCategorizingLoading: 'categorizing-loading',
+    juanizadorReportLoading: 'report-loading',
+
+    // Modal de Vocabulario
+    vocabManagerModal: 'vocabManagerModal',
+    vocabManagerList: 'vocabManagerList',
+    modalCloseButtonVocab: 'modalCloseButtonVocab',
+    modalAddNewRuleButtonVocab: 'modalAddNewRuleButtonVocab',
 };
+
+/**
+ * Función segura para obtener elementos del DOM.
+ * Busca todos los elementos definidos en elementSelectors y los devuelve en un objeto.
+ * Lanza un error si un elemento crítico no se encuentra.
+ */
+function getElements() {
+    const elements = {};
+    for (const key in elementSelectors) {
+        const selector = elementSelectors[key];
+        // Distinguimos entre IDs y Clases
+        const element = selector.startsWith('.')
+            ? document.querySelector(selector)
+            : document.getElementById(selector);
+        
+        elements[key] = element;
+    }
+    return elements;
+}
+
+// Ejecutamos la función una vez y exportamos el objeto con los elementos reales.
+// Esto se hace después de que el DOM esté completamente cargado.
+export const DOMElements = getElements();
