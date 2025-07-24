@@ -30,29 +30,16 @@
             <form id="login-form" class="auth-form">
                 <h2>Iniciar Sesión</h2>
                 <div id="login-error" class="auth-error-message"></div>
-                <div>
-                    <label for="login-email">Email:</label>
-                    <input type="email" id="login-email" required>
-                </div>
-                <div>
-                    <label for="login-password">Contraseña:</label>
-                    <input type="password" id="login-password" required>
-                </div>
+                <div><label for="login-email">Email:</label><input type="email" id="login-email" required></div>
+                <div><label for="login-password">Contraseña:</label><input type="password" id="login-password" required></div>
                 <button type="submit" id="loginButton">Iniciar Sesión</button>
                 <p class="auth-switch">¿No tienes cuenta? <a href="#" id="showSignupLink">Regístrate</a></p>
             </form>
-    
             <form id="signup-form" class="auth-form" style="display: none;">
                 <h2>Crear Cuenta</h2>
                 <div id="signup-error" class="auth-error-message"></div>
-                <div>
-                    <label for="signup-email">Email:</label>
-                    <input type="email" id="signup-email" required>
-                </div>
-                <div>
-                    <label for="signup-password">Contraseña (mín. 6 caracteres):</label>
-                    <input type="password" id="signup-password" required minlength="6">
-                </div>
+                <div><label for="signup-email">Email:</label><input type="email" id="signup-email" required></div>
+                <div><label for="signup-password">Contraseña (mín. 6 caracteres):</label><input type="password" id="signup-password" required minlength="6"></div>
                 <button type="submit" id="signupButton">Registrarse</button>
                 <p class="auth-switch">¿Ya tienes cuenta? <a href="#" id="showLoginLink">Inicia Sesión</a></p>
             </form>
@@ -68,9 +55,7 @@
             <button id="logoutButton">Cerrar Sesión</button>
         </div>
         <div class="app-wrapper"> 
-            <div id="title-frame">
-                <h1>Dictado Radiológico <small>(by JCP)</small></h1>
-            </div>
+            <div id="title-frame"><h1>Dictado Radiológico <small>(by JCP)</small></h1></div>
             <div class="app-layout"> 
                 <div class="main-column">
                     <div class="container controls">
@@ -85,9 +70,7 @@
                         </div>
                         <p id="recordingTimeDisplay"></p>
                         <p id="status" class="status-idle">Listo</p>
-                        <div id="volumeMeterContainer" style="margin-top:15px; display: none;">
-                            <div id="volumeMeterBar"></div>
-                        </div>
+                        <div id="volumeMeterContainer" style="margin-top:15px; display: none;"><div id="volumeMeterBar"></div></div>
                     </div>
                     <div class="container"> 
                         <h3>Técnica Aplicada:</h3>
@@ -105,14 +88,9 @@
                         <h3>Ajustes</h3>
                         <div class="theme-switch-wrapper">
                             <label class="theme-switch-label" for="themeSwitch">Tema Oscuro</label>
-                            <label class="theme-switch">
-                                <input type="checkbox" id="themeSwitch">
-                                <span class="slider"></span>
-                            </label>
+                            <label class="theme-switch"><input type="checkbox" id="themeSwitch"><span class="slider"></span></label>
                         </div>
-                        <div class="button-group" style="margin-top: 20px;">
-                            <button id="manageVocabButton" class="btn-blue" disabled>Gestionar Vocabulario</button>
-                        </div>
+                        <div class="button-group" style="margin-top: 20px;"><button id="manageVocabButton" class="btn-blue" disabled>Gestionar Vocabulario</button></div>
                     </div>
                     <div class="container technique-section"> 
                         <h3>Seleccionar Técnica</h3>
@@ -145,17 +123,14 @@
     </div>
 
     <!-- ====================================================== -->
-    <!-- 3. VISTA DEL JUANIZADOR (EL HTML QUE FALTABA)          -->
+    <!-- 3. VISTA DEL JUANIZADOR (CON EL INTERRUPTOR ELIMINADO) -->
     <!-- ====================================================== -->
     <div id="juanizador-container" style="display: none;">
         <header class="page-header">
             <h1>Asistente de Informes Radiológicos</h1>
             <div class="header-controls">
                 <button id="backToDictationBtn" class="btn btn-danger">Volver a dictado</button>
-                <div class="theme-switch-wrapper">
-                    <label class="theme-switch" for="themeToggleCheckboxJuanizador"><input type="checkbox" id="themeToggleCheckboxJuanizador"><span class="slider"></span></label>
-                    <span id="themeToggleLabelJuanizador" class="theme-switch-label">Tema Oscuro</span>
-                </div>
+                <!-- ¡ELEMENTO ELIMINADO DE AQUÍ! -->
             </div>
         </header>
         <div class="juanizador-section technique-selector">
