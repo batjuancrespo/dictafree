@@ -1,5 +1,6 @@
 // api.js
 // Gestiona toda la comunicación con APIs externas: Google Gemini y Firestore.
+// VERSIÓN CON LOGS DE DEPURACIÓN DETALLADOS
 
 import { db, doc, getDoc, setDoc } from './firebase.js';
 import { AppState } from './state.js';
@@ -11,7 +12,7 @@ const userApiKey = 'AIzaSyASbB99MVIQ7dt3MzjhidgoHUlMXIeWvGc'; // Clave de Gemini
 async function callGeminiAPI(modelName, promptParts, isTextPrompt = false) {
     if (!userApiKey) throw new Error('No se encontró la API Key de Gemini.');
     
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${userApiKey}`;
+    const url = `https://generativelace.googleapis.com/v1beta/models/${modelName}:generateContent?key=${userApiKey}`;
     const temperature = isTextPrompt ? 0.2 : 0.3;
 
     const payload = {
@@ -76,22 +77,30 @@ export async function transcribeAndPolishAudio(base64Audio) {
         polishedByAI = transcribedText;
     }
 
+    console.log("%c--- INICIO PROCESAMIENTO DE TEXTO ---", "color: orange; font-weight: bold;");
+
     // Paso 1: Limpiar artefactos de la IA (comillas, etc.)
     const cleanedText = cleanupArtifacts(polishedByAI);
-    
+    console.log('%c1. Texto después de limpiar artefactos de IA:', 'color: teal;', JSON.stringify(cleanedText));
+
     // <-- ¡NUEVO PASO! El Filtro de Puntuación -->
     // Eliminamos TODAS las comas y puntos que la IA haya podido añadir.
     const textWithoutAIPunctuation = cleanedText.replace(/[.,]/g, ' ');
+    console.log('%c2. Texto después de FILTRAR puntuación de IA:', 'color: red;', JSON.stringify(textWithoutAIPunctuation));
 
     // Paso 2: Aplicamos nuestras reglas de puntuación al texto ya limpio.
     // Esta función ahora solo añadirá los signos donde encuentre "coma", "punto", etc.
     const textWithPunctuation = applyPunctuationRules(textWithoutAIPunctuation);
+    console.log('%c3. Texto después de APLICAR nuestras reglas de puntuación:', 'color: green;', JSON.stringify(textWithPunctuation));
     
     // Paso 3: Capitalización y correcciones finales del usuario.
     let finalProcessing = capitalizeSentencesProperly(textWithPunctuation);
+    console.log('%c4. Texto después de capitalizar:', 'color: purple;', JSON.stringify(finalProcessing));
+
     finalProcessing = applyAllUserCorrections(finalProcessing, AppState.customVocabulary);
+    console.log('%c5. Texto FINAL (tras correcciones de usuario):', 'color: blue; font-weight: bold;', JSON.stringify(finalProcessing));
     
-    console.log("Texto final tras filtro de puntuación:", finalProcessing);
+    console.log("%c--- FIN PROCESAMIENTO DE TEXTO ---", "color: orange; font-weight: bold;");
     console.groupEnd();
     return finalProcessing;
 }
