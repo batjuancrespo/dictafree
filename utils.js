@@ -27,23 +27,27 @@ export function capitalizeSentencesProperly(text) {
 export function applyPunctuationRules(text) {
     if (!text) return "";
 
-    // Mapeo simple de palabras a signos
     const punctuationMap = {
+        'punto y aparte': '.\n',
+        'punto y seguido': '.',
         'coma': ',',
         'punto': '.',
-        'puntoseguido': '.',
-        'puntoaparte': '.\n',
         'nuevalinea': '\n',
         'dospuntos': ':'
     };
 
+    // --- ¡LA CLAVE ESTÁ AQUÍ! ---
+    // Obtenemos las claves y las ordenamos de la más larga a la más corta.
+    // Esto asegura que "punto y aparte" se reemplace antes que "punto".
+    const sortedKeys = Object.keys(punctuationMap).sort((a, b) => b.length - a.length);
+
     let processedText = text;
-    // Reemplaza las palabras clave de puntuación (ej: "coma") con sus signos (",")
-    for (const word in punctuationMap) {
-        // La expresión regular \b asegura que solo se reemplacen palabras completas
-        // Por ejemplo, no reemplazará "comadreja"
-        const regex = new RegExp(`\\b${word}\\b`, 'gi');
-        processedText = processedText.replace(regex, punctuationMap[word]);
+    // Itera sobre las claves ORDENADAS
+    for (const key of sortedKeys) {
+        // La expresión regular maneja claves con espacios (ej. "punto y aparte")
+        // y busca la clave como una palabra completa (\b) de forma global (g) y sin importar mayúsculas/minúsculas (i)
+        const regex = new RegExp(`\\b${key.replace(/\s/g, '\\s')}\\b`, 'gi');
+        processedText = processedText.replace(regex, punctuationMap[key]);
     }
 
     return processedText;
@@ -108,4 +112,4 @@ export function blobToBase64(blob) {
         reader.onerror = error => reject(error);
         reader.readAsDataURL(blob);
     });
-}
+}```
