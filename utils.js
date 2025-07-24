@@ -4,20 +4,16 @@
 export function cleanupArtifacts(text) {
     if (!text || typeof text !== 'string') return text || "";
     let cleanedText = text.trim();
-    // Elimina comillas de inicio y fin que a veces añade la IA
     if (cleanedText.startsWith('"') && cleanedText.endsWith('"') && cleanedText.length > 2) {
         cleanedText = cleanedText.substring(1, cleanedText.length - 1).trim();
     }
-    // Reemplaza espacios múltiples por uno solo
     return cleanedText.replace(/ +/g, ' ');
 }
 
 export function capitalizeSentencesProperly(text) {
     if (!text || typeof text !== 'string' || text.trim() === "") return text;
     let processedText = text.trim();
-    // Capitaliza la primera letra de todo el texto
     processedText = processedText.charAt(0).toUpperCase() + processedText.slice(1);
-    // Capitaliza las letras que vienen después de un punto, signo de exclamación/interrogación o salto de línea, seguido de espacios.
     processedText = processedText.replace(/([.!?\n]\s*)([a-záéíóúüñ])/g, 
         (match, punctuationAndSpace, letter) => punctuationAndSpace + letter.toUpperCase()
     );
@@ -36,14 +32,10 @@ export function applyPunctuationRules(text) {
         'dospuntos': ':'
     };
 
-    // Ordenamos las claves de la más larga a la más corta para evitar reemplazos parciales.
-    // Esto asegura que "punto y aparte" se reemplace antes que "punto".
     const sortedKeys = Object.keys(punctuationMap).sort((a, b) => b.length - a.length);
 
     let processedText = text;
-    // Itera sobre las claves ORDENADAS
     for (const key of sortedKeys) {
-        // La expresión regular maneja claves con espacios y busca la clave como una palabra completa (\b)
         const regex = new RegExp(`\\b${key.replace(/\s/g, '\\s')}\\b`, 'gi');
         processedText = processedText.replace(regex, punctuationMap[key]);
     }
@@ -52,21 +44,34 @@ export function applyPunctuationRules(text) {
 }
 
 /**
- * Limpia la puntuación duplicada o mal formada.
+ * ¡NUEVA VERSIÓN MEJORADA! Limpia la puntuación en varias pasadas con jerarquía.
  */
 export function cleanupDoublePunctuation(text) {
     if (!text) return "";
-    return text
-        // 1. Elimina espacios ANTES de la puntuación.
-        .replace(/\s+([.,:;!?\n])/g, '$1')
-        // 2. Asegura un espacio DESPUÉS de la puntuación si le sigue una letra.
-        .replace(/([.,:;!?])([a-zA-ZáéíóúüñÁÉÍÓÚÑ])/g, '$1 $2')
-        // 3. Corrige múltiples signos de puntuación, manteniendo el último.
-        .replace(/([.,:;!?\n])[\s.,:;!?\n]*([.,:;!?\n])/g, '$2')
-        // 4. Elimina espacios múltiples.
-        .replace(/ +/g, ' ')
+    let cleanedText = text;
+
+    // 1. Prioridad máxima: Saltos de línea. Cualquier combinación con \n se convierte en \n.
+    // Ej: ", .\n" -> "\n"
+    cleanedText = cleanedText.replace(/[.,:;!?\s]*\n[\s.,:;!?]*/g, '\n');
+
+    // 2. Prioridad media: Puntos finales. Cualquier combinación con . ! ? se convierte en el punto final.
+    // Ej: ", ." -> "."
+    cleanedText = cleanedText.replace(/[.,:;\s]*([.!?])[\s.,:;!?]*/g, '$1');
+
+    // 3. Prioridad baja: Comas y otros. Limpia duplicados menores.
+    // Ej: ", ," -> ","
+    cleanedText = cleanedText.replace(/([,:;])[\s,:;]*/g, '$1');
+
+    // 4. Pasada final para asegurar espacios correctos.
+    cleanedText = cleanedText
+        .replace(/\s+([.,:;!?\n])/g, '$1') // Espacio antes de puntuación
+        .replace(/([.,:;!?\n])([a-zA-ZáéíóúüñÁÉÍÓÚÑ])/g, '$1 $2') // Espacio después de puntuación
+        .replace(/ +/g, ' ') // Espacios múltiples
         .trim();
+
+    return cleanedText;
 }
+
 
 export function applyAllUserCorrections(text, customVocabulary) {
     if (!text || Object.keys(customVocabulary).length === 0) return text;
@@ -87,7 +92,6 @@ export function applyAllUserCorrections(text, customVocabulary) {
 }
 
 export function escapeRegExp(string) {
-    // Escapa caracteres especiales para que puedan ser usados en una expresión regular
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
@@ -111,4 +115,4 @@ export function blobToBase64(blob) {
         reader.onerror = (error) => reject(error);
         reader.readAsDataURL(blob);
     });
-} // <-- Esta es la llave de cierre de la función blobToBase64 que faltaba.
+}
