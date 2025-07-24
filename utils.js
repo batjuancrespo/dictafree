@@ -50,7 +50,7 @@ export function applyPunctuationRules(text) {
 }
 
 /**
- * ¡NUEVA VERSIÓN JERÁRQUICA! Limpia la puntuación en varias pasadas con prioridades.
+ * ¡VERSIÓN JERÁRQUICA DEFINITIVA! Limpia la puntuación en varias pasadas con prioridades.
  */
 export function cleanupDoublePunctuation(text) {
     if (!text) return "";
@@ -59,11 +59,13 @@ export function cleanupDoublePunctuation(text) {
     // 1. PRIORIDAD MÁXIMA: Normalizar "punto y aparte" (.\n).
     // Busca cualquier combinación de puntuación/espacio que contenga ".\n"
     // y la reemplaza por un ".\n" limpio, preservando el punto.
-    cleanedText = cleanedText.replace(/[\s.,:;!?]*\.\n[\s.,:;!?]*/g, '.\n');
+    // Ej: ", .\n ." -> ".\n"
+    cleanedText = cleanedText.replace(/[\s.,:;!?]*(\.\n)[\s.,:;!?]*/g, '$1');
 
     // 2. PRIORIDAD MEDIA: Normalizar puntos finales.
     // Busca cualquier combinación de comas/puntos/espacios que contenga un punto final
     // y la reemplaza por un solo punto final, dándole prioridad al punto.
+    // Ej: ", ." -> "."
     cleanedText = cleanedText.replace(/[,:;\s]*([.!?])[\s.,:;!?]*/g, '$1');
 
     // 3. PRIORIDAD BAJA: Limpiar comas y otros duplicados.
