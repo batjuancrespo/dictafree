@@ -1,14 +1,14 @@
 // domElements.js
-// Define los selectores (IDs) y proporciona una función segura para obtener elementos del DOM.
+// Define los selectores y exporta una función para inicializar las referencias del DOM de forma segura.
 
-// Objeto que contiene todos los IDs de los elementos que la aplicación necesita.
-// Esta es nuestra "única fuente de verdad" para los nombres de los IDs.
+// Objeto que contiene todos los IDs y selectores de los elementos que la aplicación necesita.
+// Esta es nuestra "única fuente de verdad" para los nombres de los selectores.
 const elementSelectors = {
-    // Contenedores
+    // Contenedores Principales
     authContainer: 'auth-container',
     appContainer: 'app-container',
     juanizadorContainer: 'juanizador-container',
-
+    
     // Autenticación
     loginForm: 'login-form',
     signupForm: 'signup-form',
@@ -24,7 +24,7 @@ const elementSelectors = {
     signupErrorDiv: 'signup-error',
     userDisplaySpan: 'userDisplay',
     logoutButton: 'logoutButton',
-
+    
     // Vista de Dictado
     startRecordBtn: 'startRecordBtn',
     pauseResumeBtn: 'pauseResumeBtn',
@@ -75,25 +75,29 @@ const elementSelectors = {
     modalAddNewRuleButtonVocab: 'modalAddNewRuleButtonVocab',
 };
 
+// Exportamos un objeto vacío que será poblado más tarde por la función de inicialización.
+export let DOMElements = {};
+
 /**
- * Función segura para obtener elementos del DOM.
- * Busca todos los elementos definidos en elementSelectors y los devuelve en un objeto.
- * Lanza un error si un elemento crítico no se encuentra.
+ * Esta función es llamada DESPUÉS de que el DOM esté completamente cargado.
+ * Selecciona todos los elementos y los añade al objeto DOMElements exportado.
+ * Es el núcleo de la solución para evitar errores de elementos 'null'.
  */
-function getElements() {
-    const elements = {};
+export function initializeDOMElements() {
+    console.log("DEBUG: Inicializando referencias del DOM...");
     for (const key in elementSelectors) {
         const selector = elementSelectors[key];
-        // Distinguimos entre IDs y Clases
+        // Distinguimos entre IDs (por defecto) y Clases (si empiezan con '.')
         const element = selector.startsWith('.')
             ? document.querySelector(selector)
             : document.getElementById(selector);
         
-        elements[key] = element;
+        // Verificación crítica para la depuración
+        if (!element) {
+            console.warn(`Advertencia de Inicialización: El elemento para la clave "${key}" con el selector "${selector}" no se encontró en el DOM.`);
+        }
+        
+        DOMElements[key] = element;
     }
-    return elements;
+    console.log("DEBUG: Referencias del DOM inicializadas y pobladas en el objeto DOMElements.");
 }
-
-// Ejecutamos la función una vez y exportamos el objeto con los elementos reales.
-// Esto se hace después de que el DOM esté completamente cargado.
-export const DOMElements = getElements();
