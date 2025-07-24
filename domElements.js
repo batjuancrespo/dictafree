@@ -39,8 +39,10 @@ export const DOMElements = {
     polishedTextarea: document.getElementById('polishedText'),
     headerArea: document.getElementById('headerArea'),
     recordingTimeDisplay: document.getElementById('recordingTimeDisplay'),
-    mainTitleImage: document.getElementById('mainTitleImage'),
-    mainTitleImageDark: document.getElementById('mainTitleImageDark'),
+    
+    // --- NUEVAS REFERENCIAS A LAS IMÁGENES DEL TEMA ---
+    themeImageLight: document.getElementById('themeImageLight'),
+    themeImageDark: document.getElementById('themeImageDark'),
 
     // --- Audio y Volumen ---
     audioPlayback: document.getElementById('audioPlayback'),
