@@ -1,10 +1,11 @@
 // juanizador.js
-// VERSIÓN REVERTIDA AL MODELO ORIGINAL Y OPTIMIZADA PARA LA API
+// VERSIÓN CON ARQUITECTURA CORREGIDA - USA DOM ELEMENTS CENTRALIZADO
 
+import { DOMElements } from './domElements.js';
 import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
 
 const API_KEY = 'AIzaSyBsKWbE6KgNaolK9BxDNDdviNw3pM7sOv0';
-const MODEL_NAME = 'gemini-2.0-flash-lite'; // <-- MODELO REVERTIDO
+const MODEL_NAME = 'gemini-2.0-flash-lite';
 const genAI = new GoogleGenerativeAI(API_KEY);
 const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
@@ -16,7 +17,7 @@ const anatomicalCategories = [
     { id: 12, name: "Esqueleto axial" }, { id: 13, name: "Otros hallazgos" }, { id: 14, name: "Bases pulmonares incluidas en el estudio" }, { id: 15, name: "Hemiabdomen superior incluido en el estudio" }
 ];
 
-let DOMElementsJuanizador, categorizedFindings = {};
+let categorizedFindings = {};
 window.availableCategories = [];
 
 async function queryGeminiAPI(prompt) {
@@ -31,13 +32,13 @@ async function queryGeminiAPI(prompt) {
 }
 
 async function categorizeFindings() {
-    const transcript = DOMElementsJuanizador.transcriptArea.value.trim();
+    const transcript = DOMElements.juanizadorTranscriptArea.value.trim();
     if (!transcript) {
         alert('No hay hallazgos para categorizar.');
         return;
     }
     
-    setLoadingState('categorizing-loading', true);
+    setLoadingState(DOMElements.juanizadorCategorizingLoading, true);
     
     const filteredCategories = anatomicalCategories.filter(cat => window.availableCategories.includes(cat.id));
     const categoryNames = filteredCategories.map(cat => `${cat.id}. ${cat.name}`).join('\n');
@@ -59,7 +60,7 @@ async function categorizeFindings() {
     } catch (error) {
         alert(`Hubo un error al categorizar los hallazgos: ${error.message}`);
     } finally {
-        setLoadingState('categorizing-loading', false);
+        setLoadingState(DOMElements.juanizadorCategorizingLoading, false);
     }
 }
 
@@ -69,10 +70,10 @@ async function generateCompleteReportOptimized() {
         return;
     }
     
-    setLoadingState('report-loading', true);
-    DOMElementsJuanizador.finalReport.textContent = 'Generando informe completo, por favor espere...';
+    setLoadingState(DOMElements.juanizadorReportLoading, true);
+    DOMElements.juanizadorFinalReport.textContent = 'Generando informe completo, por favor espere...';
 
-    const tech = DOMElementsJuanizador.imagingTechnique.value;
+    const tech = DOMElements.juanizadorImagingTechnique.value;
     const vocabularyInstructions = {
         'tac': "Utiliza terminología de Tomografía Computarizada (TAC).",
         'rm': "Utiliza terminología de Resonancia Magnética (RM).",
@@ -104,16 +105,16 @@ Ahora, genera el informe completo (HALLAZGOS y CONCLUSIÓN).`;
 
     try {
         const fullReport = await queryGeminiAPI(finalPrompt);
-        DOMElementsJuanizador.finalReport.textContent = fullReport || "La API no generó un informe. Inténtalo de nuevo.";
+        DOMElements.juanizadorFinalReport.textContent = fullReport || "La API no generó un informe. Inténtalo de nuevo.";
     } catch (e) {
-        DOMElementsJuanizador.finalReport.textContent = "Error al generar el informe. Revisa la consola.";
+        DOMElements.juanizadorFinalReport.textContent = "Error al generar el informe. Revisa la consola.";
     } finally {
-        setLoadingState('report-loading', false);
+        setLoadingState(DOMElements.juanizadorReportLoading, false);
     }
 }
 
 function displayCategorizedFindings() {
-    const container = DOMElementsJuanizador.categorizedContent;
+    const container = DOMElements.juanizadorCategorizedContent;
     container.innerHTML = '';
     const orderedCatIds = anatomicalCategories.map(c => c.id.toString());
     
@@ -136,13 +137,13 @@ function displayCategorizedFindings() {
 }
 
 function updateAvailableCategories() {
-    const tech = DOMElementsJuanizador.imagingTechnique.value;
-    const tacScope = DOMElementsJuanizador.tacScope.value;
-    const rmType = DOMElementsJuanizador.rmType.value;
+    const tech = DOMElements.juanizadorImagingTechnique.value;
+    const tacScope = DOMElements.juanizadorTacScope.value;
+    const rmType = DOMElements.juanizadorRmType.value;
     
-    DOMElementsJuanizador.tacScopeContainer.style.display = tech === 'tac' ? 'flex' : 'none';
-    DOMElementsJuanizador.rmTypeContainer.style.display = tech === 'rm' ? 'flex' : 'none';
-    DOMElementsJuanizador.contrastContainer.style.display = (tech === 'tac' || tech === 'rm') ? 'flex' : 'none';
+    DOMElements.juanizadorTacScopeContainer.style.display = tech === 'tac' ? 'flex' : 'none';
+    DOMElements.juanizadorRmTypeContainer.style.display = tech === 'rm' ? 'flex' : 'none';
+    DOMElements.juanizadorContrastContainer.style.display = (tech === 'tac' || tech === 'rm') ? 'flex' : 'none';
     
     const baseCategories = [12, 13];
     let categories = [];
@@ -164,63 +165,50 @@ function updateAvailableCategories() {
     window.availableCategories = categories;
 }
 
-function setLoadingState(elementId, isLoading) {
-    const element = document.getElementById(elementId);
-    if (element) {
-        element.style.display = isLoading ? 'block' : 'none';
+function setLoadingState(loadingElement, isLoading) {
+    if (loadingElement) {
+        loadingElement.style.display = isLoading ? 'block' : 'none';
     }
 }
 
 export function initializeJuanizador(textToAnalyze) {
-    if (!DOMElementsJuanizador) {
-        DOMElementsJuanizador = {
-            container: document.getElementById('juanizador-container'),
-            backToDictationBtn: document.getElementById('backToDictationBtn'),
-            transcriptArea: document.getElementById('transcript'),
-            categorizeBtn: document.getElementById('categorize-btn'),
-            clearBtn: document.getElementById('clear-btn'),
-            generateReportBtn: document.getElementById('generate-report-btn'),
-            copyReportBtn: document.getElementById('copy-report-btn'),
-            categorizedContent: document.getElementById('categorized-content'),
-            finalReport: document.getElementById('final-report'),
-            imagingTechnique: document.getElementById('imaging-technique'),
-            tacScope: document.getElementById('tac-scope'),
-            rmType: document.getElementById('rm-type'),
-            contrastUse: document.getElementById('contrast-use'),
-            tacScopeContainer: document.getElementById('tac-scope-container'),
-            rmTypeContainer: document.getElementById('rm-type-container'),
-            contrastContainer: document.getElementById('contrast-container'),
-            phaseContainer: document.getElementById('phase-container'),
-        };
-    }
+    console.log("DEBUG: Inicializando Juanizador...");
     
-    if (DOMElementsJuanizador.transcriptArea) {
-        DOMElementsJuanizador.transcriptArea.value = textToAnalyze;
+    if (DOMElements.juanizadorTranscriptArea) {
+        DOMElements.juanizadorTranscriptArea.value = textToAnalyze;
         categorizedFindings = {};
-        DOMElementsJuanizador.categorizedContent.innerHTML = '';
-        DOMElementsJuanizador.finalReport.textContent = 'El informe generado aparecerá aquí...';
+        DOMElements.juanizadorCategorizedContent.innerHTML = '';
+        DOMElements.juanizadorFinalReport.textContent = 'El informe generado aparecerá aquí...';
     }
     
-    if (!DOMElementsJuanizador.container.dataset.initialized) {
-        DOMElementsJuanizador.backToDictationBtn.addEventListener('click', () => {
+    if (!DOMElements.juanizadorContainer.dataset.initialized) {
+        console.log("DEBUG: Asignando listeners del Juanizador por primera vez.");
+        
+        DOMElements.juanizadorBackToDictationBtn.addEventListener('click', () => {
             window.switchToDictationView();
         });
         
-        DOMElementsJuanizador.categorizeBtn.addEventListener('click', categorizeFindings);
+        DOMElements.juanizadorCategorizeBtn.addEventListener('click', categorizeFindings);
         
-        DOMElementsJuanizador.generateReportBtn.addEventListener('click', generateCompleteReportOptimized);
+        DOMElements.juanizadorGenerateReportBtn.addEventListener('click', generateCompleteReportOptimized);
         
-        DOMElementsJuanizador.clearBtn.addEventListener('click', () => {
-            DOMElementsJuanizador.transcriptArea.value = '';
-            DOMElementsJuanizador.categorizedContent.innerHTML = '';
-            DOMElementsJuanizador.finalReport.textContent = 'El informe generado aparecerá aquí...';
+        DOMElements.juanizadorClearBtn.addEventListener('click', () => {
+            DOMElements.juanizadorTranscriptArea.value = '';
+            DOMElements.juanizadorCategorizedContent.innerHTML = '';
+            DOMElements.juanizadorFinalReport.textContent = 'El informe generado aparecerá aquí...';
         });
 
-        [DOMElementsJuanizador.imagingTechnique, DOMElementsJuanizador.tacScope, DOMElementsJuanizador.rmType, DOMElementsJuanizador.contrastUse].forEach(el => {
+        [
+            DOMElements.juanizadorImagingTechnique, 
+            DOMElements.juanizadorTacScope, 
+            DOMElements.juanizadorRmType, 
+            DOMElements.juanizadorContrastUse
+        ].forEach(el => {
             if(el) el.addEventListener('change', updateAvailableCategories);
         });
         
-        DOMElementsJuanizador.container.dataset.initialized = 'true';
+        DOMElements.juanizadorContainer.dataset.initialized = 'true';
+        console.log("DEBUG: Listeners del Juanizador asignados.");
     }
     
     updateAvailableCategories();
