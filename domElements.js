@@ -1,6 +1,6 @@
 // domElements.js
-// Selecciona todos los elementos del DOM una sola vez al cargar
-// para mejorar el rendimiento y centralizar las referencias.
+// Selecciona todos los elementos del DOM una sola vez al cargar.
+// Esta es la ÚNICA fuente de verdad para las referencias al DOM.
 
 export const DOMElements = {
     // --- Contenedores Principales ---
@@ -24,7 +24,7 @@ export const DOMElements = {
     userDisplaySpan: document.getElementById('userDisplay'),
     logoutButton: document.getElementById('logoutButton'),
     
-    // --- Botones de Control de Dictado ---
+    // --- VISTA DE DICTADO ---
     startRecordBtn: document.getElementById('startRecordBtn'),
     pauseResumeBtn: document.getElementById('pauseResumeBtn'),
     retryProcessBtn: document.getElementById('retryProcessBtn'),
@@ -33,27 +33,39 @@ export const DOMElements = {
     resetReportBtn: document.getElementById('resetReportBtn'),
     juanizarBtn: document.getElementById('juanizarBtn'),
     manageVocabButton: document.getElementById('manageVocabButton'),
-    
-    // --- Elementos de UI de Dictado ---
     statusDiv: document.getElementById('status'),
     polishedTextarea: document.getElementById('polishedText'),
     headerArea: document.getElementById('headerArea'),
     recordingTimeDisplay: document.getElementById('recordingTimeDisplay'),
-    
-    // --- NUEVAS REFERENCIAS A LAS IMÁGENES DEL TEMA ---
     themeImageLight: document.getElementById('themeImageLight'),
     themeImageDark: document.getElementById('themeImageDark'),
-
-    // --- Audio y Volumen ---
     audioPlayback: document.getElementById('audioPlayback'),
     audioPlaybackSection: document.querySelector('.audio-playback-section'),
     volumeMeterBar: document.getElementById('volumeMeterBar'),
     volumeMeterContainer: document.getElementById('volumeMeterContainer'),
-
-    // --- Ajustes y Técnicas ---
     themeSwitch: document.getElementById('themeSwitch'),
     techniqueButtonsContainer: document.getElementById('techniqueButtons'),
     clearHeaderButton: document.getElementById('clearHeaderButton'),
+
+    // --- VISTA DEL JUANIZADOR (TODOS LOS ELEMENTOS CENTRALIZADOS AQUÍ) ---
+    juanizadorBackToDictationBtn: document.getElementById('backToDictationBtn'),
+    juanizadorTranscriptArea: document.getElementById('transcript'),
+    juanizadorCategorizeBtn: document.getElementById('categorize-btn'),
+    juanizadorClearBtn: document.getElementById('clear-btn'),
+    juanizadorGenerateReportBtn: document.getElementById('generate-report-btn'),
+    juanizadorCopyReportBtn: document.getElementById('copy-report-btn'),
+    juanizadorCategorizedContent: document.getElementById('categorized-content'),
+    juanizadorFinalReport: document.getElementById('final-report'),
+    juanizadorImagingTechnique: document.getElementById('imaging-technique'),
+    juanizadorTacScope: document.getElementById('tac-scope'),
+    juanizadorRmType: document.getElementById('rm-type'),
+    juanizadorContrastUse: document.getElementById('contrast-use'),
+    juanizadorTacScopeContainer: document.getElementById('tac-scope-container'),
+    juanizadorRmTypeContainer: document.getElementById('rm-type-container'),
+    juanizadorContrastContainer: document.getElementById('contrast-container'),
+    juanizadorPhaseContainer: document.getElementById('phase-container'),
+    juanizadorCategorizingLoading: document.getElementById('categorizing-loading'),
+    juanizadorReportLoading: document.getElementById('report-loading'),
 
     // --- Modal de Vocabulario ---
     vocabManagerModal: document.getElementById('vocabManagerModal'),
