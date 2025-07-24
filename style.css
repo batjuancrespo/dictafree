@@ -302,3 +302,34 @@ body.logged-in #auth-container { display: none !important; }
     #juanizador-container .page-header { flex-direction: column; gap: 15px; align-items: flex-start; }
     #juanizador-container .header-controls { width: 100%; justify-content: space-between; }
 }
+/* ==========================================================================
+   Estilos para la Imagen del Tema en la Sidebar (AÑADIR AL FINAL)
+   ========================================================================== */
+
+.theme-image-container {
+    padding: 15px;
+    text-align: center; /* Centra la imagen dentro del contenedor */
+    background-color: var(--bg-primary); /* Fondo sutil para que destaque un poco */
+}
+
+#themeImageDark,
+#themeImageLight {
+    width: 120px; /* Ancho aproximado de 3cm */
+    height: auto; /* La altura se ajusta automáticamente para mantener la proporción */
+    border-radius: var(--border-radius-medium);
+    border: 2px solid var(--border-color);
+    box-shadow: var(--shadow-soft);
+    display: block; /* Asegura que la imagen ocupe su propio espacio */
+    margin: 0 auto; /* Centra la imagen si el contenedor es más ancho */
+    transition: transform 0.3s ease;
+}
+
+#themeImageDark:hover,
+#themeImageLight:hover {
+    transform: scale(1.05); /* Efecto sutil al pasar el ratón por encima */
+}
+
+/* Ajuste para que el título no tenga la imagen */
+#app-container #title-frame h1 {
+    padding-right: 0; /* Elimina cualquier padding que pudiera haber para la imagen */
+}
