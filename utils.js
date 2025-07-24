@@ -1,46 +1,25 @@
 // utils.js
 // Contiene funciones de utilidad, principalmente para el procesamiento de texto.
-// Son funciones "puras" que no dependen del estado global directamente.
 
 export function cleanupArtifacts(text) {
     if (!text || typeof text !== 'string') return text || "";
-    let cleanedText = text;
-    let trimmedForQuotesCheck = cleanedText.trim();
-    if (trimmedForQuotesCheck.startsWith('"') && trimmedForQuotesCheck.endsWith('"') && trimmedForQuotesCheck.length > 2) {
-        cleanedText = trimmedForQuotesCheck.substring(1, trimmedForQuotesCheck.length - 1).trim();
+    let cleanedText = text.trim();
+    // Elimina comillas de inicio y fin que a veces añade la IA
+    if (cleanedText.startsWith('"') && cleanedText.endsWith('"') && cleanedText.length > 2) {
+        cleanedText = cleanedText.substring(1, cleanedText.length - 1).trim();
     }
-    cleanedText = cleanedText.replace(/(\s[pP])+[ \t]*$/gm, "");
-    cleanedText = cleanedText.replace(/[pP]{2,}[ \t]*$/gm, "");
-    cleanedText = cleanedText.replace(/\s+[pP][\s.]*$/gm, "");
-    const trimmedTextForPunctuationCheck = cleanedText.trim();
-    const wordCount = trimmedTextForPunctuationCheck.split(/\s+/).filter(Boolean).length;
-    if (wordCount > 0 && wordCount <= 5) {
-        if (trimmedTextForPunctuationCheck.endsWith('.') &&
-            !trimmedTextForPunctuationCheck.endsWith('..') &&
-            !trimmedTextForPunctuationCheck.endsWith('...') &&
-            (trimmedTextForPunctuationCheck.length === 1 || (trimmedTextForPunctuationCheck.length > 1 && trimmedTextForPunctuationCheck.charAt(trimmedTextForPunctuationCheck.length - 2) !== '.'))) {
-            if (trimmedTextForPunctuationCheck.length <= 1 || !/[.!?]$/.test(trimmedTextForPunctuationCheck.substring(0, trimmedTextForPunctuationCheck.length - 1).trim())) {
-                cleanedText = trimmedTextForPunctuationCheck.slice(0, -1);
-            }
-        }
-    }
-    cleanedText = cleanedText.replace(/\n+$/, "");
-    cleanedText = cleanedText.replace(/\s+([.!?])$/, "$1");
-    cleanedText = cleanedText.replace(/ +/g, ' ');
-    return cleanedText.trim();
+    // Reemplaza espacios múltiples por uno solo
+    return cleanedText.replace(/ +/g, ' ');
 }
 
 export function capitalizeSentencesProperly(text) {
-    if (!text || typeof text !== 'string' || text.trim() === "") {
-        return text || "";
-    }
+    if (!text || typeof text !== 'string' || text.trim() === "") return text;
     let processedText = text.trim();
+    // Capitaliza la primera letra de todo el texto
     processedText = processedText.charAt(0).toUpperCase() + processedText.slice(1);
-    processedText = processedText.replace(
-        /([.!?\n])(\s+)([a-záéíóúüñ])/g,
-        (match, punctuation, whitespace, letter) => {
-            return punctuation + whitespace + letter.toUpperCase();
-        }
+    // Capitaliza las letras que vienen después de un punto, signo de exclamación/interrogación o salto de línea, seguido de espacios.
+    processedText = processedText.replace(/([.!?\n]\s*)([a-záéíóúüñ])/g, 
+        (match, punctuationAndSpace, letter) => punctuationAndSpace + letter.toUpperCase()
     );
     return processedText;
 }
@@ -48,54 +27,52 @@ export function capitalizeSentencesProperly(text) {
 export function applyPunctuationRules(text) {
     if (!text) return "";
 
-    let processedText = text
-        .replace(/\bpunto y aparte\b/gi, 'puntoaparte')
-        .replace(/\bpunto y seguido\b/gi, 'puntoseguido')
-        .replace(/\bnueva línea\b/gi, 'nuevalinea');
+    // Mapeo simple de palabras a signos
+    const punctuationMap = {
+        'coma': ',',
+        'punto': '.',
+        'puntoseguido': '.',
+        'puntoaparte': '.\n',
+        'nuevalinea': '\n',
+        'dospuntos': ':'
+    };
 
-    const words = processedText.split(/\s+/);
-    const result = [];
-
-    for (const word of words) {
-        const cleanWord = word.replace(/[.,:;!?]$/, '').toLowerCase();
-
-        switch (cleanWord) {
-            case "puntoaparte":
-                result.push(".\n");
-                break;
-            case "puntoseguido":
-            case "punto":
-                result.push(". ");
-                break;
-            case "coma":
-                result.push(", ");
-                break;
-            case "nuevalinea":
-                result.push("\n");
-                break;
-            case "dospuntos":
-                result.push(": ");
-                break;
-            default:
-                result.push(word);
-                break;
-        }
+    let processedText = text;
+    // Reemplaza las palabras clave de puntuación (ej: "coma") con sus signos (",")
+    for (const word in punctuationMap) {
+        // La expresión regular \b asegura que solo se reemplacen palabras completas
+        // Por ejemplo, no reemplazará "comadreja"
+        const regex = new RegExp(`\\b${word}\\b`, 'gi');
+        processedText = processedText.replace(regex, punctuationMap[word]);
     }
 
-    let final_text = result.join(" ");
-    final_text = final_text.replace(/([,.:;!?])\s*([,.:;!?])/g, '$2');
-    final_text = final_text.replace(/\s+([,.:;!?\n])/g, '$1');
-    final_text = final_text.replace(/([,.:;!?])([a-zA-ZáéíóúüñÁÉÍÓÚÑ])/g, '$1 $2');
-    final_text = final_text.replace(/ {2,}/g, ' ');
-    final_text = final_text.replace(/\n\s+/g, '\n');
+    return processedText;
+}
 
-    return final_text.trim();
+/**
+ * Limpia la puntuación duplicada o mal formada. Es el paso clave para unificar
+ * la puntuación de la IA y la del usuario.
+ */
+export function cleanupDoublePunctuation(text) {
+    if (!text) return "";
+    return text
+        // 1. Elimina espacios ANTES de la puntuación. Ej: "hola ." -> "hola."
+        .replace(/\s+([.,:;!?\n])/g, '$1')
+        // 2. Asegura un espacio DESPUÉS de la puntuación si le sigue una letra. Ej: "hola.Adiós" -> "hola. Adiós"
+        .replace(/([.,:;!?])([a-zA-ZáéíóúüñÁÉÍÓÚÑ])/g, '$1 $2')
+        // 3. Corrige múltiples signos de puntuación, manteniendo el último.
+        //    Ej: ", ." -> "." o "..," -> ","
+        .replace(/([.,:;!?\n])[\s.,:;!?\n]*([.,:;!?\n])/g, '$2')
+        // 4. Elimina espacios múltiples que puedan haber quedado.
+        .replace(/ +/g, ' ')
+        .trim();
 }
 
 export function applyAllUserCorrections(text, customVocabulary) {
     if (!text || Object.keys(customVocabulary).length === 0) return text;
     
     let processedText = text;
+    // Ordena las claves por longitud (de más larga a más corta) para evitar reemplazos parciales
     const sortedCustomKeys = Object.keys(customVocabulary).sort((a, b) => b.length - a.length);
     
     for (const errorKey of sortedCustomKeys) {
@@ -111,6 +88,7 @@ export function applyAllUserCorrections(text, customVocabulary) {
 }
 
 export function escapeRegExp(string) {
+    // Escapa caracteres especiales para que puedan ser usados en una expresión regular
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
