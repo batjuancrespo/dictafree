@@ -8,13 +8,6 @@ import { cleanupArtifacts, applyPunctuationRules, capitalizeSentencesProperly, a
 
 const userApiKey = 'AIzaSyASbB99MVIQ7dt3MzjhidgoHUlMXIeWvGc'; // Clave de Gemini
 
-/**
- * Llama a la API de Gemini para generar contenido.
- * @param {string} modelName - El nombre del modelo a usar.
- * @param {Array} promptParts - Las partes del prompt.
- * @param {boolean} isTextPrompt - Si es un prompt de solo texto para ajustar la temperatura.
- * @returns {Promise<string>} - La respuesta de texto de la API.
- */
 async function callGeminiAPI(modelName, promptParts, isTextPrompt = false) {
     if (!userApiKey) throw new Error('No se encontró la API Key de Gemini.');
     
@@ -25,8 +18,6 @@ async function callGeminiAPI(modelName, promptParts, isTextPrompt = false) {
         contents: [{ parts: promptParts }],
         generationConfig: { temperature: temperature },
     };
-
-    console.log(`%c[API Call] Enviando a ${modelName} (Temp: ${temperature})`, 'color: #888;', { prompt: JSON.stringify(payload.contents).substring(0, 400) + '...' });
 
     const response = await fetch(url, {
         method: 'POST',
@@ -52,25 +43,19 @@ async function callGeminiAPI(modelName, promptParts, isTextPrompt = false) {
     return "";
 }
 
-/**
- * Proceso completo de transcripción y pulido del audio.
- * @param {string} base64Audio - El audio codificado en Base64.
- * @returns {Promise<string>} - El texto final, procesado y listo para insertar.
- */
 export async function transcribeAndPolishAudio(base64Audio) {
     console.groupCollapsed(`[Proceso de Dictado] ${new Date().toLocaleTimeString()}`);
     
-    const MODEL_TO_USE = 'gemini-2.0-flash-lite'; // <-- MODELO REVERTIDO
+    const MODEL_TO_USE = 'gemini-2.0-flash-lite';
 
     let transcribedText = '';
     try {
         setStatus('Transcribiendo audio...', 'processing');
         const transcriptPromptParts = [
-            { text: "Transcribe el siguiente audio a texto con la MÁXIMA LITERALIDAD POSIBLE. Transcribe palabras como 'punto', 'coma', 'punto y aparte' como texto, no como signos de puntuación. El objetivo es una transcripción fiel palabra por palabra, incluyendo los signos de puntuación que el hablante dicte (ej. si dice una coma, transcribe ',')." },
+            { text: "Transcribe el siguiente audio a texto con la MÁXIMA LITERALIDAD POSIBLE. Transcribe palabras como 'punto', 'coma', 'punto y aparte' como texto, no como signos de puntuación. NO añadas ninguna coma o punto que el hablante no dicte explícitamente como palabra." },
             { inline_data: { mime_type: "audio/webm", data: base64Audio } }
         ];
         transcribedText = await callGeminiAPI(MODEL_TO_USE, transcriptPromptParts, false);
-        console.log("%c[PASO 1] Transcripción literal recibida:", "font-weight: bold; color: blue;", JSON.stringify(transcribedText));
     } catch (e) {
         console.error("Error en la transcripción:", e);
         console.groupEnd();
@@ -81,28 +66,32 @@ export async function transcribeAndPolishAudio(base64Audio) {
     try {
         setStatus('Puliendo texto...', 'processing');
         const polishPromptParts = [{
-            text: `Por favor, revisa el siguiente texto. Tu única tarea es corregir errores ortográficos y gramaticales objetivos.
-            - NO cambies la elección de palabras.
-            - NO reestructures frases.
-            - CRUCIAL: Mantén las palabras de puntuación (como "punto", "coma", "punto y aparte") y los signos de puntuación (como ",") EXACTAMENTE como están. No los conviertas ni los elimines.
-            
-            Texto a procesar:
-            "${transcribedText}"`
+            text: `Revisa y corrige SOLAMENTE errores ortográficos y gramaticales objetivos en el siguiente texto. Es un error CRÍTICO añadir, eliminar o modificar la puntuación o las palabras de puntuación (como "coma" o "punto"). Mantén la estructura y las palabras exactas. Texto a procesar: "${transcribedText}"`
         }];
         
         polishedByAI = await callGeminiAPI(MODEL_TO_USE, polishPromptParts, true);
-        console.log("%c[PASO 2] Texto pulido por IA:", "font-weight: bold; color: purple;", JSON.stringify(polishedByAI));
     } catch (e) {
         console.error("Error en el pulido por IA:", e);
         setStatus(`Fallo en pulido, usando transcripción original.`, "error", 4000);
         polishedByAI = transcribedText;
     }
 
+    // Paso 1: Limpiar artefactos de la IA (comillas, etc.)
     const cleanedText = cleanupArtifacts(polishedByAI);
-    const textWithPunctuation = applyPunctuationRules(cleanedText);
+    
+    // <-- ¡NUEVO PASO! El Filtro de Puntuación -->
+    // Eliminamos TODAS las comas y puntos que la IA haya podido añadir.
+    const textWithoutAIPunctuation = cleanedText.replace(/[.,]/g, ' ');
+
+    // Paso 2: Aplicamos nuestras reglas de puntuación al texto ya limpio.
+    // Esta función ahora solo añadirá los signos donde encuentre "coma", "punto", etc.
+    const textWithPunctuation = applyPunctuationRules(textWithoutAIPunctuation);
+    
+    // Paso 3: Capitalización y correcciones finales del usuario.
     let finalProcessing = capitalizeSentencesProperly(textWithPunctuation);
     finalProcessing = applyAllUserCorrections(finalProcessing, AppState.customVocabulary);
     
+    console.log("Texto final tras filtro de puntuación:", finalProcessing);
     console.groupEnd();
     return finalProcessing;
 }
