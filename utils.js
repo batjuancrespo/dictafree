@@ -36,16 +36,14 @@ export function applyPunctuationRules(text) {
         'dospuntos': ':'
     };
 
-    // --- ¡LA CLAVE ESTÁ AQUÍ! ---
-    // Obtenemos las claves y las ordenamos de la más larga a la más corta.
+    // Ordenamos las claves de la más larga a la más corta para evitar reemplazos parciales.
     // Esto asegura que "punto y aparte" se reemplace antes que "punto".
     const sortedKeys = Object.keys(punctuationMap).sort((a, b) => b.length - a.length);
 
     let processedText = text;
     // Itera sobre las claves ORDENADAS
     for (const key of sortedKeys) {
-        // La expresión regular maneja claves con espacios (ej. "punto y aparte")
-        // y busca la clave como una palabra completa (\b) de forma global (g) y sin importar mayúsculas/minúsculas (i)
+        // La expresión regular maneja claves con espacios y busca la clave como una palabra completa (\b)
         const regex = new RegExp(`\\b${key.replace(/\s/g, '\\s')}\\b`, 'gi');
         processedText = processedText.replace(regex, punctuationMap[key]);
     }
@@ -54,20 +52,18 @@ export function applyPunctuationRules(text) {
 }
 
 /**
- * Limpia la puntuación duplicada o mal formada. Es el paso clave para unificar
- * la puntuación de la IA y la del usuario.
+ * Limpia la puntuación duplicada o mal formada.
  */
 export function cleanupDoublePunctuation(text) {
     if (!text) return "";
     return text
-        // 1. Elimina espacios ANTES de la puntuación. Ej: "hola ." -> "hola."
+        // 1. Elimina espacios ANTES de la puntuación.
         .replace(/\s+([.,:;!?\n])/g, '$1')
-        // 2. Asegura un espacio DESPUÉS de la puntuación si le sigue una letra. Ej: "hola.Adiós" -> "hola. Adiós"
+        // 2. Asegura un espacio DESPUÉS de la puntuación si le sigue una letra.
         .replace(/([.,:;!?])([a-zA-ZáéíóúüñÁÉÍÓÚÑ])/g, '$1 $2')
         // 3. Corrige múltiples signos de puntuación, manteniendo el último.
-        //    Ej: ", ." -> "." o "..," -> ","
         .replace(/([.,:;!?\n])[\s.,:;!?\n]*([.,:;!?\n])/g, '$2')
-        // 4. Elimina espacios múltiples que puedan haber quedado.
+        // 4. Elimina espacios múltiples.
         .replace(/ +/g, ' ')
         .trim();
 }
@@ -76,7 +72,6 @@ export function applyAllUserCorrections(text, customVocabulary) {
     if (!text || Object.keys(customVocabulary).length === 0) return text;
     
     let processedText = text;
-    // Ordena las claves por longitud (de más larga a más corta) para evitar reemplazos parciales
     const sortedCustomKeys = Object.keys(customVocabulary).sort((a, b) => b.length - a.length);
     
     for (const errorKey of sortedCustomKeys) {
@@ -98,18 +93,22 @@ export function escapeRegExp(string) {
 
 export function blobToBase64(blob) {
     return new Promise((resolve, reject) => {
-        if (!blob || blob.size === 0) return reject(new Error("El blob de audio es nulo o está vacío."));
+        if (!blob || blob.size === 0) {
+            return reject(new Error("El blob de audio es nulo o está vacío."));
+        }
         const reader = new FileReader();
         reader.onloadend = () => {
             if (reader.result) {
                 const parts = reader.result.toString().split(',');
-                if (parts.length < 2 || !parts[1]) return reject(new Error("Fallo al convertir a Base64."));
+                if (parts.length < 2 || !parts[1]) {
+                    return reject(new Error("Fallo al convertir a Base64."));
+                }
                 resolve(parts[1]);
             } else {
                 reject(new Error("FileReader no produjo ningún resultado."));
             }
         };
-        reader.onerror = error => reject(error);
+        reader.onerror = (error) => reject(error);
         reader.readAsDataURL(blob);
     });
-}```
+} // <-- Esta es la llave de cierre de la función blobToBase64 que faltaba.
