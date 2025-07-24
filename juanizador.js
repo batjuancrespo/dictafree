@@ -38,7 +38,7 @@ async function categorizeFindings() {
         return;
     }
     
-    setLoadingState(DOMElements.juanizadorCategorizingLoading, true);
+    setLoadingState('juanizadorCategorizingLoading', true);
     
     const filteredCategories = anatomicalCategories.filter(cat => window.availableCategories.includes(cat.id));
     const categoryNames = filteredCategories.map(cat => `${cat.id}. ${cat.name}`).join('\n');
@@ -60,7 +60,7 @@ async function categorizeFindings() {
     } catch (error) {
         alert(`Hubo un error al categorizar los hallazgos: ${error.message}`);
     } finally {
-        setLoadingState(DOMElements.juanizadorCategorizingLoading, false);
+        setLoadingState('juanizadorCategorizingLoading', false);
     }
 }
 
@@ -70,7 +70,7 @@ async function generateCompleteReportOptimized() {
         return;
     }
     
-    setLoadingState(DOMElements.juanizadorReportLoading, true);
+    setLoadingState('juanizadorReportLoading', true);
     DOMElements.juanizadorFinalReport.textContent = 'Generando informe completo, por favor espere...';
 
     const tech = DOMElements.juanizadorImagingTechnique.value;
@@ -109,7 +109,7 @@ Ahora, genera el informe completo (HALLAZGOS y CONCLUSIÓN).`;
     } catch (e) {
         DOMElements.juanizadorFinalReport.textContent = "Error al generar el informe. Revisa la consola.";
     } finally {
-        setLoadingState(DOMElements.juanizadorReportLoading, false);
+        setLoadingState('juanizadorReportLoading', false);
     }
 }
 
@@ -133,6 +133,13 @@ function displayCategorizedFindings() {
 
     if (!hasFindings) {
         container.innerHTML = '<p style="text-align:center; color: var(--text-secondary);">No se encontraron hallazgos para categorizar.</p>';
+    }
+}
+
+function setLoadingState(loadingElementKey, isLoading) {
+    const element = DOMElements[loadingElementKey];
+    if (element) {
+        element.style.display = isLoading ? 'block' : 'none';
     }
 }
 
@@ -165,9 +172,15 @@ function updateAvailableCategories() {
     window.availableCategories = categories;
 }
 
-function setLoadingState(loadingElement, isLoading) {
-    if (loadingElement) {
-        loadingElement.style.display = isLoading ? 'block' : 'none';
+/**
+ * Función auxiliar para añadir listeners de forma segura.
+ */
+function safeAddEventListener(elementKey, event, handler) {
+    const element = DOMElements[elementKey];
+    if (element) {
+        element.addEventListener(event, handler);
+    } else {
+        console.error(`Error Crítico de Inicialización: El elemento con la clave "${elementKey}" no se encontró en el DOM.`);
     }
 }
 
@@ -184,28 +197,20 @@ export function initializeJuanizador(textToAnalyze) {
     if (!DOMElements.juanizadorContainer.dataset.initialized) {
         console.log("DEBUG: Asignando listeners del Juanizador por primera vez.");
         
-        DOMElements.juanizadorBackToDictationBtn.addEventListener('click', () => {
-            window.switchToDictationView();
-        });
-        
-        DOMElements.juanizadorCategorizeBtn.addEventListener('click', categorizeFindings);
-        
-        DOMElements.juanizadorGenerateReportBtn.addEventListener('click', generateCompleteReportOptimized);
-        
-        DOMElements.juanizadorClearBtn.addEventListener('click', () => {
-            DOMElements.juanizadorTranscriptArea.value = '';
-            DOMElements.juanizadorCategorizedContent.innerHTML = '';
-            DOMElements.juanizadorFinalReport.textContent = 'El informe generado aparecerá aquí...';
+        safeAddEventListener('juanizadorBackToDictationBtn', 'click', () => window.switchToDictationView());
+        safeAddEventListener('juanizadorCategorizeBtn', 'click', categorizeFindings);
+        safeAddEventListener('juanizadorGenerateReportBtn', 'click', generateCompleteReportOptimized);
+        safeAddEventListener('juanizadorClearBtn', 'click', () => {
+            if (DOMElements.juanizadorTranscriptArea) DOMElements.juanizadorTranscriptArea.value = '';
+            if (DOMElements.juanizadorCategorizedContent) DOMElements.juanizadorCategorizedContent.innerHTML = '';
+            if (DOMElements.juanizadorFinalReport) DOMElements.juanizadorFinalReport.textContent = 'El informe generado aparecerá aquí...';
         });
 
-        [
-            DOMElements.juanizadorImagingTechnique, 
-            DOMElements.juanizadorTacScope, 
-            DOMElements.juanizadorRmType, 
-            DOMElements.juanizadorContrastUse
-        ].forEach(el => {
-            if(el) el.addEventListener('change', updateAvailableCategories);
-        });
+        // Asignación segura de listeners a los selectores
+        safeAddEventListener('juanizadorImagingTechnique', 'change', updateAvailableCategories);
+        safeAddEventListener('juanizadorTacScope', 'change', updateAvailableCategories);
+        safeAddEventListener('juanizadorRmType', 'change', updateAvailableCategories);
+        safeAddEventListener('juanizadorContrastUse', 'change', updateAvailableCategories);
         
         DOMElements.juanizadorContainer.dataset.initialized = 'true';
         console.log("DEBUG: Listeners del Juanizador asignados.");
