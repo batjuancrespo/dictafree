@@ -1,23 +1,24 @@
 // api.js
-// Gestiona toda la comunicación con APIs externas: Google Gemini y Firestore.
-// VERSIÓN CON PROMPTS REFORZADOS
+// VERSIÓN CON NUEVO FLUJO DE PUNTUACIÓN ROBUSTO
 
 import { db, doc, getDoc, setDoc } from './firebase.js';
 import { AppState } from './state.js';
 import { setStatus } from './ui.js';
-import { cleanupArtifacts, applyPunctuationRules, capitalizeSentencesProperly, applyAllUserCorrections } from './utils.js';
+import { 
+    cleanupArtifacts, applyPunctuationRules, cleanupDoublePunctuation,
+    capitalizeSentencesProperly, applyAllUserCorrections 
+} from './utils.js';
 
 const userApiKey = 'AIzaSyASbB99MVIQ7dt3MzjhidgoHUlMXIeWvGc'; // Clave de Gemini
 
-async function callGeminiAPI(modelName, promptParts, isTextPrompt = false) {
+async function callGeminiAPI(modelName, promptParts) {
     if (!userApiKey) throw new Error('No se encontró la API Key de Gemini.');
     
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${userApiKey}`;
-    const temperature = isTextPrompt ? 0.2 : 0.3;
-
+    
     const payload = {
         contents: [{ parts: promptParts }],
-        generationConfig: { temperature: temperature },
+        generationConfig: { temperature: 0.3 },
     };
 
     const response = await fetch(url, {
@@ -33,12 +34,7 @@ async function callGeminiAPI(modelName, promptParts, isTextPrompt = false) {
     }
 
     const data = await response.json();
-    
-    if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
-        return data.candidates[0].content.parts[0].text;
-    }
-    
-    return "";
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
 }
 
 export async function transcribeAndPolishAudio(base64Audio) {
@@ -50,60 +46,47 @@ export async function transcribeAndPolishAudio(base64Audio) {
     try {
         setStatus('Transcribiendo audio...', 'processing');
         
-        // --- PROMPT DE TRANSCRIPCIÓN REFORZADO CON EJEMPLO ---
+        // --- PROMPT SIMPLIFICADO ---
+        // Pedimos que transcriba lo mejor posible, incluyendo palabras de puntuación.
         const transcriptPromptParts = [
-            { text: `Tu única tarea es transcribir el audio palabra por palabra. Es un error crítico interpretar las palabras de puntuación. Debes transcribirlas literalmente.
-            Ejemplo: Si el audio dice "hígado normal punto y seguido bazo normal", tu única respuesta válida es "hígado normal punto y seguido bazo normal".
-            No respondas con "hígado normal. bazo normal". Transcribe el audio ahora.` },
+            { text: `Transcribe el siguiente audio médico. Transcribe las palabras de puntuación como "punto" o "coma" como texto literal.` },
             { inline_data: { mime_type: "audio/webm", data: base64Audio } }
         ];
         
-        transcribedText = await callGeminiAPI(MODEL_TO_USE, transcriptPromptParts, false);
+        transcribedText = await callGeminiAPI(MODEL_TO_USE, transcriptPromptParts);
     } catch (e) {
         console.error("Error en la transcripción:", e);
         console.groupEnd();
         throw new Error(`Fallo en la transcripción: ${e.message}`);
     }
     
-    let polishedByAI = '';
-    try {
-        setStatus('Puliendo texto...', 'processing');
-
-        // --- PROMPT DE PULIDO REFORZADO ---
-        const polishPromptParts = [{
-            text: `Revisa y corrige SOLAMENTE errores ortográficos objetivos en el siguiente texto. NO corrijas la gramática. NO añadas, elimines o modifiques la puntuación o las palabras de puntuación (como "coma" o "punto"). Es un error CRÍTICO cambiar la estructura. Tu única tarea es la corrección ortográfica. Texto a procesar: "${transcribedText}"`
-        }];
-        
-        polishedByAI = await callGeminiAPI(MODEL_TO_USE, polishPromptParts, true);
-    } catch (e) {
-        console.error("Error en el pulido por IA:", e);
-        setStatus(`Fallo en pulido, usando transcripción original.`, "error", 4000);
-        polishedByAI = transcribedText;
-    }
-    
     console.log("%c--- INICIO PROCESAMIENTO DE TEXTO ---", "color: orange; font-weight: bold;");
 
-    const cleanedText = cleanupArtifacts(polishedByAI);
-    console.log('%c1. Texto después de limpiar artefactos de IA:', 'color: teal;', JSON.stringify(cleanedText));
+    // Paso 1: Limpiar artefactos básicos (comillas, etc.)
+    const cleanedText = cleanupArtifacts(transcribedText);
+    console.log('%c1. Texto de la IA (limpio):', 'color: teal;', JSON.stringify(cleanedText));
 
-    const textWithoutAIPunctuation = cleanedText.replace(/[.,]/g, ' ');
-    console.log('%c2. Texto después de FILTRAR puntuación de IA:', 'color: red;', JSON.stringify(textWithoutAIPunctuation));
+    // Paso 2: Aplicamos NUESTRAS reglas sobre el texto de la IA
+    // Esto añade nuestra puntuación dictada. Ej: "hola. coma" -> "hola. ,"
+    const textWithBothPunctuations = applyPunctuationRules(cleanedText);
+    console.log('%c2. Texto con puntuación de IA + dictado:', 'color: purple;', JSON.stringify(textWithBothPunctuations));
 
-    const textWithPunctuation = applyPunctuationRules(textWithoutAIPunctuation);
-    console.log('%c3. Texto después de APLICAR nuestras reglas de puntuación:', 'color: green;', JSON.stringify(textWithPunctuation));
+    // Paso 3: Limpiamos la puntuación duplicada o mal formada
+    const textWithCleanPunctuation = cleanupDoublePunctuation(textWithBothPunctuations);
+    console.log('%c3. Texto después de LIMPIAR puntuación combinada:', 'color: red;', JSON.stringify(textWithCleanPunctuation));
     
-    let finalProcessing = capitalizeSentencesProperly(textWithPunctuation);
-    console.log('%c4. Texto después de capitalizar:', 'color: purple;', JSON.stringify(finalProcessing));
-
+    // Paso 4: Capitalización y correcciones de vocabulario
+    let finalProcessing = capitalizeSentencesProperly(textWithCleanPunctuation);
     finalProcessing = applyAllUserCorrections(finalProcessing, AppState.customVocabulary);
-    console.log('%c5. Texto FINAL (tras correcciones de usuario):', 'color: blue; font-weight: bold;', JSON.stringify(finalProcessing));
+    console.log('%c4. Texto FINAL (capitalizado y corregido):', 'color: blue; font-weight: bold;', JSON.stringify(finalProcessing));
     
     console.log("%c--- FIN PROCESAMIENTO DE TEXTO ---", "color: orange; font-weight: bold;");
     console.groupEnd();
     return finalProcessing;
 }
 
-// ... (El resto de las funciones de Firestore no cambian)
+// --- Funciones de Firestore (sin cambios) ---
+
 export async function loadUserVocabularyFromFirestore(userId) {
     if (!userId || !db) {
         AppState.customVocabulary = {};
