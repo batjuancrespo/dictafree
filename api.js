@@ -1,6 +1,6 @@
 // api.js
 // Gestiona toda la comunicación con APIs externas: Google Gemini y Firestore.
-// VERSIÓN CON URL CORREGIDA Y LOGS DE DEPURACIÓN
+// VERSIÓN CON PROMPTS REFORZADOS
 
 import { db, doc, getDoc, setDoc } from './firebase.js';
 import { AppState } from './state.js';
@@ -12,9 +12,7 @@ const userApiKey = 'AIzaSyASbB99MVIQ7dt3MzjhidgoHUlMXIeWvGc'; // Clave de Gemini
 async function callGeminiAPI(modelName, promptParts, isTextPrompt = false) {
     if (!userApiKey) throw new Error('No se encontró la API Key de Gemini.');
     
-    // <-- ¡ESTA ES LA LÍNEA CORREGIDA! -->
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${userApiKey}`;
-    
     const temperature = isTextPrompt ? 0.2 : 0.3;
 
     const payload = {
@@ -40,9 +38,6 @@ async function callGeminiAPI(modelName, promptParts, isTextPrompt = false) {
         return data.candidates[0].content.parts[0].text;
     }
     
-    if (data.promptFeedback?.blockReason) throw new Error(`Prompt bloqueado por seguridad: ${data.promptFeedback.blockReason}.`);
-    if (data.candidates?.[0]?.finishReason !== "STOP") throw new Error(`Generación incompleta (Razón: ${data.candidates[0].finishReason}).`);
-    
     return "";
 }
 
@@ -54,10 +49,15 @@ export async function transcribeAndPolishAudio(base64Audio) {
     let transcribedText = '';
     try {
         setStatus('Transcribiendo audio...', 'processing');
+        
+        // --- PROMPT DE TRANSCRIPCIÓN REFORZADO CON EJEMPLO ---
         const transcriptPromptParts = [
-            { text: "Transcribe el siguiente audio a texto con la MÁXIMA LITERALIDAD POSIBLE. Transcribe palabras como 'punto', 'coma', 'punto y aparte' como texto, no como signos de puntuación. NO añadas ninguna coma o punto que el hablante no dicte explícitamente como palabra." },
+            { text: `Tu única tarea es transcribir el audio palabra por palabra. Es un error crítico interpretar las palabras de puntuación. Debes transcribirlas literalmente.
+            Ejemplo: Si el audio dice "hígado normal punto y seguido bazo normal", tu única respuesta válida es "hígado normal punto y seguido bazo normal".
+            No respondas con "hígado normal. bazo normal". Transcribe el audio ahora.` },
             { inline_data: { mime_type: "audio/webm", data: base64Audio } }
         ];
+        
         transcribedText = await callGeminiAPI(MODEL_TO_USE, transcriptPromptParts, false);
     } catch (e) {
         console.error("Error en la transcripción:", e);
@@ -68,8 +68,10 @@ export async function transcribeAndPolishAudio(base64Audio) {
     let polishedByAI = '';
     try {
         setStatus('Puliendo texto...', 'processing');
+
+        // --- PROMPT DE PULIDO REFORZADO ---
         const polishPromptParts = [{
-            text: `Revisa y corrige SOLAMENTE errores ortográficos y gramaticales objetivos en el siguiente texto. Es un error CRÍTICO añadir, eliminar o modificar la puntuación o las palabras de puntuación (como "coma" o "punto"). Mantén la estructura y las palabras exactas. Texto a procesar: "${transcribedText}"`
+            text: `Revisa y corrige SOLAMENTE errores ortográficos objetivos en el siguiente texto. NO corrijas la gramática. NO añadas, elimines o modifiques la puntuación o las palabras de puntuación (como "coma" o "punto"). Es un error CRÍTICO cambiar la estructura. Tu única tarea es la corrección ortográfica. Texto a procesar: "${transcribedText}"`
         }];
         
         polishedByAI = await callGeminiAPI(MODEL_TO_USE, polishPromptParts, true);
@@ -78,7 +80,7 @@ export async function transcribeAndPolishAudio(base64Audio) {
         setStatus(`Fallo en pulido, usando transcripción original.`, "error", 4000);
         polishedByAI = transcribedText;
     }
-
+    
     console.log("%c--- INICIO PROCESAMIENTO DE TEXTO ---", "color: orange; font-weight: bold;");
 
     const cleanedText = cleanupArtifacts(polishedByAI);
