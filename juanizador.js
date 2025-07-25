@@ -1,5 +1,5 @@
 // juanizador.js
-// VERSIÓN CON LÓGICA DE INFORMES COMPLETA Y RESTAURADA
+// VERSIÓN CON GENERACIÓN DE TÉCNICA DETERMINISTA Y ENSAMBLAJE DE INFORME CONTROLADO
 
 import { DOMElements } from './domElements.js';
 import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
@@ -76,7 +76,50 @@ async function categorizeFindings() {
 }
 
 /**
- * ¡FUNCIÓN RESTAURADA Y MEJORADA! Genera el informe completo con toda la lógica original.
+ * Genera el texto de la técnica de forma determinista basado en los selectores.
+ */
+function generateTechniqueText() {
+    const tech = DOMElements.juanizadorImagingTechnique.value;
+    const withContrast = DOMElements.juanizadorContrastUse.value === 'con';
+    
+    if (tech === 'eco') {
+        return "Exploración ecográfica con sonda multifrecuencia.";
+    }
+    
+    if (tech === 'rm') {
+        const rmType = DOMElements.juanizadorRmType.value;
+        const contrastText = withContrast ? " y estudio dinámico tras la administración endovenosa de contraste" : "";
+        switch(rmType) {
+            case 'hepatica': return `Se realiza exploración abdominal con secuencias potenciadas en T1 en fase y fuera de fase, T2 sin y con saturación grasa, difusión${contrastText}.`;
+            case 'colangio': return `Se realiza exploración abdominal con secuencias potenciadas en T1 en fase y fuera de fase, T2 sin y con saturación grasa, estudio dinámico tras la administración endovenosa de contraste completándose la valoración con cortes radiales respecto al colédoco orientados a la valoración de la via biliar.`;
+            case 'entero': return `Se realiza exploración abdominal con secuencias potenciadas en T2, difusión y estudio dinámico tras la administración endovenosa de contraste previa distensión de las asas intestinales. Exploración orientada a la valoración de asas de intestino delgado.`;
+            case 'fistulas': return `Se realiza exploración pélvica con secuencias potenciadas en T2 sin y con saturación grasa y difusión.`;
+            case 'neo-pelvis': return `Se realiza exploración pélvica con secuencias potenciadas en T2 sin y con saturación grasa en los tres planos del espacio, difusión y estudio dinámico tras la administración endovenosa de contraste.`;
+            default: return "";
+        }
+    }
+
+    if (tech === 'tac') {
+        const scope = DOMElements.juanizadorTacScope.options[DOMElements.juanizadorTacScope.selectedIndex].text;
+        let text = `Se realiza exploración ${scope.toLowerCase()}`;
+        
+        if (withContrast) {
+            text += " tras la administración endovenosa de contraste";
+            const phasesCheckboxes = document.querySelectorAll('#phase-container input[type="checkbox"]:checked');
+            const phases = Array.from(phasesCheckboxes).map(cb => cb.value);
+            if (phases.length > 0) {
+                text += ` con adquisición de imágenes en fase ${phases.join(' y ')}`;
+            }
+        } else {
+            text += " sin administración endovenosa de contraste";
+        }
+        return text + ".";
+    }
+    return "";
+}
+
+/**
+ * Genera el informe final pidiendo el contenido a la IA y formateándolo en JS.
  */
 async function generateCompleteReport() {
     if (!DOMElements.juanizadorCategorizeBtn.dataset.categorized) {
@@ -85,70 +128,86 @@ async function generateCompleteReport() {
     }
     
     setLoadingState('juanizadorReportLoading', true);
-    DOMElements.juanizadorFinalReport.textContent = 'Generando informe completo, por favor espere...';
+    DOMElements.juanizadorFinalReport.textContent = 'Generando contenido del informe...';
 
-    // 1. Recopilar toda la información del contexto del estudio
+    // 1. Recopilar contexto y construir listas
     const tech = DOMElements.juanizadorImagingTechnique.value;
-    const tacScope = DOMElements.juanizadorTacScope.value;
-    const withContrast = DOMElements.juanizadorContrastUse.value === 'con';
-    const phasesCheckboxes = document.querySelectorAll('#phase-container input[type="checkbox"]:checked');
-    const phases = Array.from(phasesCheckboxes).map(cb => cb.value);
+    const vocabularyInstructions = { 'tac': "TAC", 'rm': "Resonancia Magnética (RM)", 'eco': "Ecografía" };
+    const modalityInstruction = vocabularyInstructions[tech] || "genérica";
 
-    const vocabularyInstructions = {
-        'tac': "Utiliza terminología de Tomografía Computarizada (TAC).",
-        'rm': "Utiliza terminología de Resonancia Magnética (RM).",
-        'eco': "Utiliza terminología de Ecografía."
-    };
-    const modalityInstruction = vocabularyInstructions[tech] || "Redacta un párrafo conciso y profesional.";
-
-    // 2. Determinar el orden de las categorías y cuáles tienen hallazgos y cuáles no
     const reportCategories = anatomicalCategories.filter(c => window.availableCategories.includes(c.id));
     
-    let findingsForPrompt = "Hallazgos encontrados por categoría:\n";
-    let normalCategoriesForPrompt = "Categorías sin hallazgos (debes usar la frase de normalidad exacta para estas):\n";
+    let findingsList = [];
+    let normalList = [];
     
     reportCategories.forEach(category => {
         const findings = categorizedFindings[category.id.toString()];
         if (findings && findings.length > 0) {
-            findingsForPrompt += `- ${category.name}: ${findings.join('. ')}\n`;
-        } else if (category.normal) { // Solo si tiene una frase de normalidad
-            normalCategoriesForPrompt += `- ${category.name}: "${category.normal}"\n`;
+            findingsList.push({ category: category.name, findings: findings.join('. ') });
+        } else if (category.normal) {
+            normalList.push(category.name);
         }
     });
 
-    // 3. Construir el prompt único y enriquecido
+    // 2. Construir el prompt para la IA
     const finalPrompt = `
-Eres un radiólogo experto. Tu tarea es generar un informe radiológico completo y estructurado.
+Eres un radiólogo experto. Tu tarea es generar el texto para un informe.
+Usa vocabulario de ${modalityInstruction}.
 
-**Contexto del Estudio:**
-- Técnica: ${tech.toUpperCase()}
-- Alcance: ${tacScope}
-- Contraste: ${withContrast ? 'Sí' : 'No'}
-${withContrast && phases.length > 0 ? `- Fases: ${phases.join(', ')}` : ''}
+**Tarea 1: Hallazgos Anormales**
+Para cada categoría en esta lista, redacta un párrafo profesional describiendo los hallazgos:
+${JSON.stringify(findingsList)}
 
-**Instrucciones Generales:**
-1.  **Vocabulario:** Usa estrictamente el vocabulario correspondiente a la técnica (${modalityInstruction}).
-2.  **Orden:** Genera el informe respetando el orden de las categorías que te proporciono.
-3.  **Integridad:** Debes generar un párrafo para CADA categoría, tanto las que tienen hallazgos como las que no.
-4.  **Conclusión:** Al final de todo, añade una sección llamada "CONCLUSIÓN:" que resuma los 2-3 hallazgos más importantes. Si no hay hallazgos significativos, la conclusión debe ser "No se observan alteraciones radiológicas significativas."
+**Tarea 2: Conclusión**
+Basado SOLAMENTE en los hallazgos anormales de la lista anterior, genera una conclusión concisa de 2-3 líneas resumiendo lo más importante. Si la lista de hallazgos está vacía, la conclusión debe ser "No se observan alteraciones radiológicas significativas."
 
-**Contenido a Incluir:**
+**Formato de Salida Obligatorio:**
+Devuelve un único objeto JSON con dos claves: "report_paragraphs" y "conclusion".
+"report_paragraphs" debe ser un objeto donde cada clave es el nombre de la categoría y el valor es el párrafo que has redactado.
+Si la lista de hallazgos anormales está vacía, "report_paragraphs" debe ser un objeto vacío {}.
 
-${findingsForPrompt}
----
-${normalCategoriesForPrompt}
+Ejemplo de formato si hay hallazgos:
+{
+  "report_paragraphs": {
+    "Hígado, porta y confluente esplenomesentérico venoso": "El hígado presenta contornos lobulados...",
+    "Bazo, glándulas suprarrenales...": "El bazo está aumentado de tamaño..."
+  },
+  "conclusion": "Signos de hepatopatía crónica con esplenomegalia."
+}`;
 
-Ahora, genera el informe completo (HALLAZGOS y CONCLUSIÓN) siguiendo todas las instrucciones.`;
-
+    let aiContent;
     try {
-        const fullReport = await queryGeminiAPI(finalPrompt);
-        DOMElements.juanizadorFinalReport.textContent = fullReport ? fullReport.replace("HALLAZGOS:", "").trim() : "La API no generó un informe. Inténtalo de nuevo.";
+        const response = await queryGeminiAPI(finalPrompt);
+        const jsonMatch = response.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error('La respuesta de la IA no es un JSON válido.');
+        aiContent = JSON.parse(jsonMatch[0]);
     } catch (e) {
-        DOMElements.juanizadorFinalReport.textContent = "Error al generar el informe. Revisa la consola.";
-    } finally {
+        DOMElements.juanizadorFinalReport.textContent = "Error al generar el contenido con la IA. Revisa la consola.";
         setLoadingState('juanizadorReportLoading', false);
+        return;
     }
+
+    // 3. Ensamblaje final del informe en JavaScript
+    DOMElements.juanizadorFinalReport.textContent = 'Ensamblando informe final...';
+
+    const techniqueText = generateTechniqueText();
+    let findingsText = "";
+    
+    reportCategories.forEach(category => {
+        if (aiContent.report_paragraphs && aiContent.report_paragraphs[category.name]) {
+            findingsText += aiContent.report_paragraphs[category.name] + '\n';
+        } else if (category.normal) {
+            findingsText += category.normal + '\n';
+        }
+    });
+
+    const conclusionText = aiContent.conclusion || "No se observan alteraciones radiológicas significativas.";
+    const fullReport = `TÉCNICA:\n${techniqueText}\n\nHALLAZGOS:\n${findingsText.trim()}\n\nCONCLUSIÓN:\n${conclusionText.trim()}`;
+    
+    DOMElements.juanizadorFinalReport.textContent = fullReport;
+    setLoadingState('juanizadorReportLoading', false);
 }
+
 
 function displayCategorizedFindings() {
     const container = DOMElements.juanizadorCategorizedContent;
@@ -171,9 +230,9 @@ function displayCategorizedFindings() {
 
     if (!hasFindings) {
         container.innerHTML = '<p style="text-align:center; color: var(--text-secondary);">No se encontraron hallazgos para categorizar.</p>';
-    } else {
-        DOMElements.juanizadorCategorizeBtn.dataset.categorized = "true";
     }
+    // Marcamos como categorizado incluso si no hay hallazgos, para poder generar un informe de normalidad.
+    DOMElements.juanizadorCategorizeBtn.dataset.categorized = "true";
 }
 
 function setLoadingState(loadingElementKey, isLoading) {
@@ -229,17 +288,15 @@ export function initializeJuanizador(textToAnalyze) {
         
         safeAddEventListener('juanizadorBackToDictationBtn', 'click', () => window.switchToDictationView());
         safeAddEventListener('juanizadorCategorizeBtn', 'click', categorizeFindings);
-        safeAddEventListener('juanizadorGenerateReportBtn', 'click', generateCompleteReport); // Apunta a la nueva función
+        safeAddEventListener('juanizadorGenerateReportBtn', 'click', generateCompleteReport);
         safeAddEventListener('juanizadorClearBtn', 'click', () => {
             if (DOMElements.juanizadorTranscriptArea) DOMElements.juanizadorTranscriptArea.value = '';
             if (DOMElements.juanizadorCategorizedContent) DOMElements.juanizadorCategorizedContent.innerHTML = '';
             if (DOMElements.juanizadorFinalReport) DOMElements.juanizadorFinalReport.textContent = 'El informe generado aparecerá aquí...';
-            DOMElements.juanizadorCategorizeBtn.dataset.categorized = "false";
+            if (DOMElements.juanizadorCategorizeBtn) DOMElements.juanizadorCategorizeBtn.dataset.categorized = "false";
         });
 
-        const selectorsToWatch = [
-            'juanizadorImagingTechnique', 'juanizadorTacScope', 'juanizadorRmType', 'juanizadorContrastUse'
-        ];
+        const selectorsToWatch = ['juanizadorImagingTechnique', 'juanizadorTacScope', 'juanizadorRmType', 'juanizadorContrastUse'];
         selectorsToWatch.forEach(key => safeAddEventListener(key, 'change', updateAvailableCategories));
         
         document.querySelectorAll('#phase-container input[type="checkbox"]').forEach(cb => {
