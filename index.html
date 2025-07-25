@@ -207,10 +207,17 @@
     </div>
 
     <!-- ====================================================== -->
-    <!-- 5. ELEMENTOS PARA LA TRANSICIÓN DE BATMAN (ESTRUCTURA NUEVA) -->
+    <!-- 5. ELEMENTOS PARA LA TRANSICIÓN DE BATMAN (VERSIÓN SVG) -->
     <!-- ====================================================== -->
+    <svg width="0" height="0" style="position:absolute; z-index: -1;">
+      <defs>
+        <clipPath id="batman-mask-shape" clipPathUnits="objectBoundingBox">
+            <path d="M0.821,0.237 C0.781,0.198,0.71,0.198,0.67,0.237 L0.5,0.417 L0.33,0.237 C0.29,0.198,0.219,0.198,0.179,0.237 C0.14,0.277,0.14,0.348,0.179,0.388 L0.334,0.543 C0.34,0.55,0.34,0.559,0.334,0.566 L0.258,0.642 C0.252,0.648,0.242,0.648,0.236,0.642 L0.203,0.609 C0.196,0.603,0.187,0.603,0.18,0.609 L0.155,0.634 C0.149,0.64,0.149,0.65,0.155,0.656 L0.231,0.732 C0.237,0.738,0.247,0.738,0.253,0.732 L0.5,0.486 L0.747,0.732 C0.753,0.738,0.763,0.738,0.769,0.732 L0.845,0.656 C0.851,0.65,0.851,0.64,0.845,0.634 L0.82,0.609 C0.813,0.603,0.804,0.603,0.797,0.609 L0.764,0.642 C0.758,0.648,0.748,0.648,0.742,0.642 L0.666,0.566 C0.66,0.559,0.66,0.55,0.666,0.543 L0.821,0.388 C0.86,0.348,0.86,0.277,0.821,0.237"></path>
+        </clipPath>
+      </defs>
+    </svg>
     <div id="batman-transition-overlay">
-        <div id="batman-logo-shape"></div>
+        <!-- Este div usará la máscara SVG de arriba. No necesita contenido. -->
     </div>
     <audio id="batman-transition-audio" src="batman-transition-sound.mp3" preload="auto"></audio>
 
