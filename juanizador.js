@@ -24,7 +24,7 @@ const anatomicalCategories = [
     { id: 10, name: "Líquido libre o adenopatías intra-abdominales", normal: "No se observa líquido libre ni adenopatías intra-abdominales de aspecto patológico." },
     { id: 11, name: "Aorta y grandes vasos mesentéricos", normal: "Aorta y grandes vasos mesentéricos de calibre normal, sin hallazgos significativos." },
     { id: 12, name: "Esqueleto axial", normal: "Esqueleto axial incluido en el estudio sin lesiones focales ni anomalías morfológicas relevantes." },
-    { id: 13, name: "Otros hallazgos", normal: null },
+    { id: 13, name: "Otros hallazgos", normal: null }, // Esta categoría no tiene frase de normalidad
     { id: 14, name: "Bases pulmonares incluidas en el estudio", normal: "En las bases pulmonares incluidas en el estudio no se observan hallazgos patológicos de significación." },
     { id: 15, name: "Hemiabdomen superior incluido en el estudio", normal: "En el hemiabdomen superior incluido en el estudio no se objetivan hallazgos relevantes." }
 ];
@@ -159,7 +159,7 @@ Si la lista de hallazgos anormales está vacía, "report_paragraphs" debe ser un
     try {
         const response = await queryGeminiAPI(finalPrompt);
         const jsonMatch = response.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) throw new Error('La respuesta de la IA no es un JSON válido.');
+        if (!jsonMatch) throw new Error('La respuesta de la API no es un JSON válido.');
         aiContent = JSON.parse(jsonMatch[0]);
     } catch (e) {
         DOMElements.juanizadorFinalReport.textContent = "Error al generar el contenido con la IA. Revisa la consola.";
