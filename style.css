@@ -123,7 +123,6 @@ body[data-theme="light"] {
 body.logged-out #app-container, body.logged-out #juanizador-container { display: none !important; }
 body.logged-out #auth-container { display: block !important; } 
 body.logged-in #auth-container { display: none !important; }
-/* La visibilidad de app-container y juanizador-container se gestiona con JS */
 
 #auth-container { width: 100%; max-width: 450px; margin-top: 50px; }
 #app-container, #juanizador-container { width: 100%; display: flex; flex-direction: column; align-items:center; }
@@ -159,7 +158,6 @@ body.logged-in #auth-container { display: none !important; }
 #app-container #title-frame { background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--border-radius-medium); padding: 20px 25px; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-soft); width: 100%; max-width: 1600px; box-sizing: border-box; margin-bottom: 20px; min-height: 80px; }
 #app-container #title-frame h1 { font-size: 2.2em; color: var(--text-primary); font-weight: 600; text-align: center; margin: 0; line-height: 1.1; }
 #app-container #title-frame h1 small { font-size: 0.55em; color: var(--text-secondary); font-weight: normal; margin-left: 8px; }
-#app-container #mainTitleImage, #app-container #mainTitleImageDark { height: 55px; width: 55px; margin-left: 20px; border-radius: var(--border-radius-small); border: 1px solid var(--theme-image-border); object-fit: cover; }
 #app-container .controls .buttons-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 15px; }
 #app-container #polishedText { min-height: 250px; font-size: 1.05em; }
 #app-container #headerArea { min-height: 100px; margin-bottom: 0; }
@@ -218,7 +216,7 @@ body.logged-in #auth-container { display: none !important; }
 #app-container .btn-tech-gray:hover:not(:disabled) { background-color: var(--btn-technique-gray-hover); }
 
 /* ==========================================================================
-   Vista del Juanizador (#juanizador-container) - ESTILOS ESPECÍFICOS
+   Vista del Juanizador (#juanizador-container)
    ========================================================================== */
 #juanizador-container { max-width: 1400px; gap: 20px; }
 #juanizador-container .page-header { width: 100%; box-sizing: border-box; background-color: var(--bg-secondary); padding: 15px 25px; border-radius: var(--border-radius-medium); border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
@@ -286,6 +284,44 @@ body.logged-in #auth-container { display: none !important; }
 .modal-actions .btn-record { padding: 10px 20px; font-size: 1em; }
 
 /* ==========================================================================
+   Estilos de Sidebar e Imagen de Tema
+   ========================================================================== */
+.theme-image-container { padding: 15px; text-align: center; background-color: var(--bg-primary); }
+#themeImageDark, #themeImageLight { width: 120px; height: auto; border-radius: var(--border-radius-medium); border: 2px solid var(--border-color); box-shadow: var(--shadow-soft); display: block; margin: 0 auto; transition: transform 0.3s ease; }
+#themeImageDark:hover, #themeImageLight:hover { transform: scale(1.05); }
+
+/* ==========================================================================
+   Efecto de Transición Batman (VERSIÓN DEFINITIVA CON GIF)
+   ========================================================================== */
+#batman-transition-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #000; /* Fondo negro sólido */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    z-index: 9999;
+    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+}
+#batman-transition-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+#batman-transition-gif {
+    width: 100%;
+    height: 100%;
+    /* ¡EL CAMBIO CLAVE ESTÁ AQUÍ! */
+    object-fit: cover; /* Cubre toda la pantalla, recortando si es necesario */
+    display: none;
+}
+
+/* ==========================================================================
    Media Queries para Responsividad
    ========================================================================== */
 @media (max-width: 992px) { 
@@ -293,7 +329,7 @@ body.logged-in #auth-container { display: none !important; }
     #app-container .sidebar-column { position: static; width: 100%; max-width: none; order: 2; } 
     #app-container .main-column { order: 1; } 
     #app-container #title-frame h1, #juanizador-container .page-header h1 { font-size: 1.6em; } 
-    #app-container #mainTitleImage, #app-container #mainTitleImageDark { height: 35px; width: 35px; margin-left: 10px;} 
+    #app-container #themeImageDark, #app-container #themeImageLight { width: 100px; } 
 }
 @media (max-width: 768px) { 
     #app-container .controls .buttons-group { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); } 
@@ -301,109 +337,4 @@ body.logged-in #auth-container { display: none !important; }
     #app-container #techniqueButtons .technique-group { grid-template-columns: 1fr; } 
     #juanizador-container .page-header { flex-direction: column; gap: 15px; align-items: flex-start; }
     #juanizador-container .header-controls { width: 100%; justify-content: space-between; }
-}
-/* ==========================================================================
-   Estilos para la Imagen del Tema en la Sidebar (AÑADIR AL FINAL)
-   ========================================================================== */
-
-.theme-image-container {
-    padding: 15px;
-    text-align: center; /* Centra la imagen dentro del contenedor */
-    background-color: var(--bg-primary); /* Fondo sutil para que destaque un poco */
-}
-
-#themeImageDark,
-#themeImageLight {
-    width: 120px; /* Ancho aproximado de 3cm */
-    height: auto; /* La altura se ajusta automáticamente para mantener la proporción */
-    border-radius: var(--border-radius-medium);
-    border: 2px solid var(--border-color);
-    box-shadow: var(--shadow-soft);
-    display: block; /* Asegura que la imagen ocupe su propio espacio */
-    margin: 0 auto; /* Centra la imagen si el contenedor es más ancho */
-    transition: transform 0.3s ease;
-}
-
-#themeImageDark:hover,
-#themeImageLight:hover {
-    transform: scale(1.05); /* Efecto sutil al pasar el ratón por encima */
-}
-
-/* Ajuste para que el título no tenga la imagen */
-#app-container #title-frame h1 {
-    padding-right: 0; /* Elimina cualquier padding que pudiera haber para la imagen */
-}
-/* ==========================================================================
-   Estilos para la Imagen del Tema en la Sidebar (AÑADIR AL FINAL)
-   ========================================================================== */
-
-.theme-image-container {
-    padding: 15px;
-    text-align: center; 
-    background-color: var(--bg-primary); 
-}
-
-#themeImageDark,
-#themeImageLight {
-    width: 120px; 
-    height: auto; 
-    border-radius: var(--border-radius-medium);
-    border: 2px solid var(--border-color);
-    box-shadow: var(--shadow-soft);
-    display: block; 
-    margin: 0 auto; 
-    transition: transform 0.3s ease;
-}
-
-#themeImageDark:hover,
-#themeImageLight:hover {
-    transform: scale(1.05); 
-}
-
-#app-container #title-frame h1 {
-    padding-right: 0; 
-}
-
-
-/* ==========================================================================
-   Efecto de Transición Batman (VERSIÓN DEFINITIVA CON GIF)
-   ========================================================================== */
-
-#batman-transition-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    
-    /* Fondo negro semitransparente para atenuar la página de fondo */
-    background: rgba(0, 0, 0, 0.7);
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
-
-    /* Oculto por defecto */
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    z-index: 9999;
-    
-    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
-}
-
-/* Estado activo para mostrar la transición */
-#batman-transition-overlay.active {
-    opacity: 1;
-    visibility: visible;
-}
-
-#batman-transition-gif {
-    /* El GIF se ajusta para llenar la pantalla sin distorsionarse */
-    width: 100vw;
-    height: 100vh;
-    object-fit: contain; /* 'contain' asegura que se vea todo el GIF. Usa 'cover' si prefieres que llene la pantalla sin bordes. */
-
-    /* Oculto por defecto, se mostrará con JS */
-    display: none;
 }
