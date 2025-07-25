@@ -1,14 +1,10 @@
 // ui.js
-// Contiene todas las funciones que interactúan directamente con el DOM,
-// actualizando la interfaz de usuario.
+// Contiene todas las funciones que interactúan directamente con el DOM.
 
 import { AppState } from './state.js';
 import { DOMElements } from './domElements.js';
 import { saveUserVocabularyToFirestore } from './api.js';
 
-/**
- * ¡FUNCIÓN MODIFICADA! Aplica el tema (oscuro/claro) a la aplicación.
- */
 export function applyTheme(theme) {
     document.body.setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
@@ -16,7 +12,6 @@ export function applyTheme(theme) {
         DOMElements.themeSwitch.checked = theme === 'dark';
     }
     
-    // Nueva lógica para mostrar/ocultar las imágenes grandes en la sidebar
     if (DOMElements.themeImageLight && DOMElements.themeImageDark) {
         if (theme === 'dark') {
             DOMElements.themeImageDark.style.display = 'block';
@@ -82,8 +77,7 @@ export function updateButtonStates(state) {
             correctTextSelectionBtn.disabled = polishedTextarea.value.trim() === "";
             break;
 
-        case "processing_audio":
-            break;
+        case "processing_audio": break;
 
         case "error_processing":
         case "success_processing":
@@ -135,6 +129,25 @@ export async function copyFullReportToClipboard(showStatus = true) {
         if (showStatus) {
             setStatus("¡Informe completo copiado!", "success", 2000);
         }
+
+        // --- INICIO DE LA LÓGICA DE TRANSICIÓN ---
+        const { batmanTransitionOverlay, batmanTransitionAudio } = DOMElements;
+
+        if (batmanTransitionOverlay && batmanTransitionAudio) {
+            // Rebobina el audio para poder pulsarlo rápido
+            batmanTransitionAudio.currentTime = 0;
+            batmanTransitionAudio.play().catch(e => console.error("Error al reproducir audio:", e));
+
+            // Activa la animación y el overlay
+            batmanTransitionOverlay.classList.add('active');
+
+            // Oculta la transición después de un tiempo
+            setTimeout(() => {
+                batmanTransitionOverlay.classList.remove('active');
+            }, 1500); // 1.5 segundos
+        }
+        // --- FIN DE LA LÓGICA DE TRANSICIÓN ---
+
     } catch (e) {
         console.error('Error al copiar el texto:', e);
         AppState.lastCopiedText = '';
