@@ -134,17 +134,17 @@ export async function copyFullReportToClipboard(showStatus = true) {
         const { batmanTransitionOverlay, batmanTransitionAudio } = DOMElements;
 
         if (batmanTransitionOverlay && batmanTransitionAudio) {
-            // Rebobina el audio para poder pulsarlo rápido
             batmanTransitionAudio.currentTime = 0;
             batmanTransitionAudio.play().catch(e => console.error("Error al reproducir audio:", e));
 
-            // Activa la animación y el overlay
             batmanTransitionOverlay.classList.add('active');
 
-            // Oculta la transición después de un tiempo
+            // Oculta la transición después de que la animación termine
+            // El tiempo debe coincidir con la duración de la animación en CSS (1.2s)
+            // más un pequeño margen.
             setTimeout(() => {
                 batmanTransitionOverlay.classList.remove('active');
-            }, 1500); // 1.5 segundos
+            }, 1300); // 1.3 segundos
         }
         // --- FIN DE LA LÓGICA DE TRANSICIÓN ---
 
