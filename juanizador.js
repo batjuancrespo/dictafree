@@ -1,5 +1,5 @@
 // juanizador.js
-// VERSIÓN CON TODAS LAS MEJORAS FINALES Y SINTAXIS CORREGIDA
+// VERSIÓN CON ALERT ELIMINADO
 
 import { DOMElements } from './domElements.js';
 import { triggerBatmanTransition, updateCopyButtonState } from './ui.js';
@@ -286,10 +286,15 @@ export function initializeJuanizador(textToAnalyze) {
             if (textToCopy && textToCopy !== 'El informe generado aparecerá aquí...') {
                 navigator.clipboard.writeText(textToCopy)
                     .then(() => {
-                        alert("Informe final copiado al portapapeles.");
-                        triggerBatmanTransition();
+                        // ¡CAMBIO CLAVE! Se elimina el alert.
+                        // alert("Informe final copiado al portapapeles.");
+                        console.log("Informe final copiado al portapapeles.");
+                        triggerBatmanTransition(); // Lanza la animación
                     })
-                    .catch(err => console.error("Error al copiar el informe final:", err));
+                    .catch(err => {
+                        console.error("Error al copiar el informe final:", err);
+                        alert("Error al copiar el informe. Revisa la consola.");
+                    });
             } else {
                 alert("No hay informe generado para copiar.");
             }
