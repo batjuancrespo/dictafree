@@ -366,71 +366,50 @@ body.logged-in #auth-container { display: none !important; }
 
 
 /* ==========================================================================
-   Efecto de Transición Batman (NUEVA VERSIÓN CON MÁSCARA)
+   Efecto de Transición Batman (VERSIÓN DEFINITIVA CON SVG MASK)
    ========================================================================== */
 
 #batman-transition-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw; /* Ocupa todo el ancho de la ventana */
-    height: 100vh; /* Ocupa todo el alto de la ventana */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0); /* Estado inicial: centrado e invisible */
     
-    /* El overlay en sí es transparente, solo contiene la forma */
-    background: transparent;
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    /* Hacemos que sea un círculo gigante para asegurar que cubra las esquinas */
+    width: 200vw; 
+    height: 200vw;
+    border-radius: 50%;
+    
+    /* El fondo vibrante que se verá a través de la máscara */
+    background: radial-gradient(circle, #ffde00 0%, #ff8c00 40%, #e8491e 100%);
 
     /* Oculto por defecto y sin afectar a los clics */
     opacity: 0;
     pointer-events: none;
     z-index: 9999;
+
+    /* ¡LA MAGIA DEL SVG! Aplicamos la forma que definimos en el HTML */
+    clip-path: url(#batman-mask-shape);
+    -webkit-clip-path: url(#batman-mask-shape); /* Compatibilidad */
     
-    /* Prepara al navegador para una animación de opacidad */
-    will-change: opacity; 
+    /* Avisamos al navegador que animaremos esto para un mejor rendimiento */
+    will-change: transform, opacity;
 }
 
-/* Estado activo para mostrar la transición */
+/* Estado activo para mostrar y animar la transición */
 #batman-transition-overlay.active {
     opacity: 1;
-    transition: opacity 0.1s ease-in; /* Aparece muy rápido */
-}
-
-/* La forma del logo que se va a animar */
-#batman-logo-shape {
-    /* Dimensiones iniciales del logo */
-    width: 300px;
-    height: 180px; /* Ajusta esto a la proporción de tu logo */
-
-    /* El fondo vibrante AHORA ESTÁ DENTRO de la forma */
-    background: radial-gradient(circle, #ffde00 0%, #ff8c00 40%, #e8491e 100%);
-
-    /* ¡LA MAGIA DE LA MÁSCARA! */
-    mask-image: url('batman-transition-logo.png');
-    -webkit-mask-image: url('batman-transition-logo.png'); /* Para compatibilidad */
-    mask-size: contain;
-    mask-repeat: no-repeat;
-    mask-position: center;
-
-    /* Estado inicial de la animación: invisible y muy pequeño */
-    transform: scale(0);
-    will-change: transform; /* Avisa al navegador que animaremos la escala */
-}
-
-/* Cuando el overlay está activo, la forma ejecuta la animación de "wipe" */
-#batman-transition-overlay.active #batman-logo-shape {
-    animation: bat-wipe 1.2s cubic-bezier(0.6, 0.04, 0.98, 0.335) forwards;
+    animation: bat-wipe-svg 1.2s cubic-bezier(0.6, 0.04, 0.98, 0.335) forwards;
 }
 
 /* Definición de la animación de crecimiento para llenar la pantalla */
-@keyframes bat-wipe {
+@keyframes bat-wipe-svg {
     0% {
-        transform: scale(0);
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 1;
     }
     100% {
-        /* Un número muy grande para asegurar que cubre cualquier pantalla */
-        transform: scale(50); 
+        transform: translate(-50%, -50%) scale(1); /* Crece hasta llenar la pantalla */
+        opacity: 1;
     }
 }
