@@ -139,7 +139,6 @@ export async function copyFullReportToClipboard(showStatus = true) {
             batmanTransitionGif.style.display = 'block';
             
             // 2. Reinicia el GIF añadiendo un timestamp aleatorio a la URL.
-            // Esto fuerza al navegador a recargarlo y reproducirlo desde el principio.
             batmanTransitionGif.src = `batman-transition.gif?t=${new Date().getTime()}`;
 
             // 3. Reproduce el sonido
@@ -147,11 +146,11 @@ export async function copyFullReportToClipboard(showStatus = true) {
             batmanTransitionAudio.play().catch(e => console.error("Error al reproducir audio:", e));
             
             // 4. Oculta todo después de que el GIF y el sonido hayan terminado.
-            // Ajusta este tiempo (en ms) a la duración de tu GIF.
+            // ¡CAMBIO CLAVE AQUÍ!
             setTimeout(() => {
                 batmanTransitionOverlay.classList.remove('active');
                 batmanTransitionGif.style.display = 'none';
-            }, 2500); // 2.5 segundos (ajustar si es necesario)
+            }, 1400); // <-- Reducido a 1.4 segundos. ¡Puedes ajustar este valor!
         }
         // --- FIN DE LA LÓGICA DE TRANSICIÓN ---
 
