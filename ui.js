@@ -5,6 +5,32 @@ import { AppState } from './state.js';
 import { DOMElements } from './domElements.js';
 import { saveUserVocabularyToFirestore } from './api.js';
 
+/**
+ * ¡NUEVA FUNCIÓN REUTILIZABLE! Activa la animación de Batman.
+ */
+export function triggerBatmanTransition() {
+    const { batmanTransitionOverlay, batmanTransitionAudio, batmanTransitionGif } = DOMElements;
+
+    if (batmanTransitionOverlay && batmanTransitionAudio && batmanTransitionGif) {
+        // Muestra el overlay y el GIF
+        batmanTransitionOverlay.classList.add('active');
+        batmanTransitionGif.style.display = 'block';
+        
+        // Reinicia el GIF forzando la recarga
+        batmanTransitionGif.src = `batman-transition.gif?t=${new Date().getTime()}`;
+
+        // Reproduce el sonido
+        batmanTransitionAudio.currentTime = 0;
+        batmanTransitionAudio.play().catch(e => console.error("Error al reproducir audio:", e));
+        
+        // Oculta todo después de un tiempo
+        setTimeout(() => {
+            batmanTransitionOverlay.classList.remove('active');
+            batmanTransitionGif.style.display = 'none';
+        }, 1400); // 1.4 segundos
+    }
+}
+
 export function applyTheme(theme) {
     document.body.setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
@@ -60,14 +86,12 @@ export function updateButtonStates(state) {
             correctTextSelectionBtn.disabled = polishedTextarea.value.trim() === "";
             setStatus("Listo", "idle");
             break;
-
         case "recording":
             startRecordBtn.disabled = false;
             startRecordBtn.textContent = AppState.isDictatingForReplacement ? "Detener Reemplazo" : "Detener Dictado";
             startRecordBtn.classList.add("stop-style");
             pauseResumeBtn.disabled = false;
             break;
-
         case "paused":
             startRecordBtn.disabled = false;
             startRecordBtn.textContent = AppState.isDictatingForReplacement ? "Detener Reemplazo" : "Detener Dictado";
@@ -76,9 +100,7 @@ export function updateButtonStates(state) {
             pauseResumeBtn.textContent = "Reanudar";
             correctTextSelectionBtn.disabled = polishedTextarea.value.trim() === "";
             break;
-
         case "processing_audio": break;
-
         case "error_processing":
         case "success_processing":
             startRecordBtn.disabled = false;
@@ -129,31 +151,7 @@ export async function copyFullReportToClipboard(showStatus = true) {
         if (showStatus) {
             setStatus("¡Informe completo copiado!", "success", 2000);
         }
-
-        // --- INICIO DE LA LÓGICA DE TRANSICIÓN CON GIF ---
-        const { batmanTransitionOverlay, batmanTransitionAudio, batmanTransitionGif } = DOMElements;
-
-        if (batmanTransitionOverlay && batmanTransitionAudio && batmanTransitionGif) {
-            // 1. Muestra el overlay y el GIF
-            batmanTransitionOverlay.classList.add('active');
-            batmanTransitionGif.style.display = 'block';
-            
-            // 2. Reinicia el GIF añadiendo un timestamp aleatorio a la URL.
-            batmanTransitionGif.src = `batman-transition.gif?t=${new Date().getTime()}`;
-
-            // 3. Reproduce el sonido
-            batmanTransitionAudio.currentTime = 0;
-            batmanTransitionAudio.play().catch(e => console.error("Error al reproducir audio:", e));
-            
-            // 4. Oculta todo después de que el GIF y el sonido hayan terminado.
-            // ¡CAMBIO CLAVE AQUÍ!
-            setTimeout(() => {
-                batmanTransitionOverlay.classList.remove('active');
-                batmanTransitionGif.style.display = 'none';
-            }, 1400); // <-- Reducido a 1.4 segundos. ¡Puedes ajustar este valor!
-        }
-        // --- FIN DE LA LÓGICA DE TRANSICIÓN ---
-
+        triggerBatmanTransition();
     } catch (e) {
         console.error('Error al copiar el texto:', e);
         AppState.lastCopiedText = '';
