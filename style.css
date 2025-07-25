@@ -366,50 +366,71 @@ body.logged-in #auth-container { display: none !important; }
 
 
 /* ==========================================================================
-   Efecto de Transición Batman (AÑADIR AL FINAL)
+   Efecto de Transición Batman (NUEVA VERSIÓN CON MÁSCARA)
    ========================================================================== */
 
 #batman-transition-overlay {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle, #ff3b3b 0%, #a70000 100%);
+    width: 100vw; /* Ocupa todo el ancho de la ventana */
+    height: 100vh; /* Ocupa todo el alto de la ventana */
+    
+    /* El overlay en sí es transparente, solo contiene la forma */
+    background: transparent;
+
     display: flex;
     justify-content: center;
     align-items: center;
+
+    /* Oculto por defecto y sin afectar a los clics */
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.4s ease-out;
     z-index: 9999;
+    
+    /* Prepara al navegador para una animación de opacidad */
+    will-change: opacity; 
 }
 
+/* Estado activo para mostrar la transición */
 #batman-transition-overlay.active {
     opacity: 1;
-    pointer-events: all;
+    transition: opacity 0.1s ease-in; /* Aparece muy rápido */
 }
 
-#batman-transition-logo {
-    width: 250px;
-    height: auto;
+/* La forma del logo que se va a animar */
+#batman-logo-shape {
+    /* Dimensiones iniciales del logo */
+    width: 300px;
+    height: 180px; /* Ajusta esto a la proporción de tu logo */
+
+    /* El fondo vibrante AHORA ESTÁ DENTRO de la forma */
+    background: radial-gradient(circle, #ffde00 0%, #ff8c00 40%, #e8491e 100%);
+
+    /* ¡LA MAGIA DE LA MÁSCARA! */
+    mask-image: url('batman-transition-logo.png');
+    -webkit-mask-image: url('batman-transition-logo.png'); /* Para compatibilidad */
+    mask-size: contain;
+    mask-repeat: no-repeat;
+    mask-position: center;
+
+    /* Estado inicial de la animación: invisible y muy pequeño */
+    transform: scale(0);
+    will-change: transform; /* Avisa al navegador que animaremos la escala */
 }
 
-#batman-transition-overlay.active #batman-transition-logo {
-    animation: bat-spin 0.7s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+/* Cuando el overlay está activo, la forma ejecuta la animación de "wipe" */
+#batman-transition-overlay.active #batman-logo-shape {
+    animation: bat-wipe 1.2s cubic-bezier(0.6, 0.04, 0.98, 0.335) forwards;
 }
 
-@keyframes bat-spin {
+/* Definición de la animación de crecimiento para llenar la pantalla */
+@keyframes bat-wipe {
     0% {
-        transform: scale(0) rotate(-720deg);
-        opacity: 0;
-    }
-    70% {
-        transform: scale(1.2) rotate(10deg);
-        opacity: 1;
+        transform: scale(0);
     }
     100% {
-        transform: scale(1) rotate(0deg);
-        opacity: 1;
+        /* Un número muy grande para asegurar que cubre cualquier pantalla */
+        transform: scale(50); 
     }
 }
