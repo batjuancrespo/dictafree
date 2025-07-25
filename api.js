@@ -1,12 +1,12 @@
 // api.js
-// VERSIÓN CON NUEVO FLUJO DE PUNTUACIÓN ROBUSTO
+// VERSIÓN CON NORMALIZADOR DE PARÉNTESIS
 
 import { db, doc, getDoc, setDoc } from './firebase.js';
 import { AppState } from './state.js';
 import { setStatus } from './ui.js';
 import { 
     cleanupArtifacts, applyPunctuationRules, cleanupDoublePunctuation,
-    capitalizeSentencesProperly, applyAllUserCorrections 
+    capitalizeSentencesProperly, applyAllUserCorrections, normalizeParenthesesSpacing
 } from './utils.js';
 
 const userApiKey = 'AIzaSyASbB99MVIQ7dt3MzjhidgoHUlMXIeWvGc'; // Clave de Gemini
@@ -46,8 +46,6 @@ export async function transcribeAndPolishAudio(base64Audio) {
     try {
         setStatus('Transcribiendo audio...', 'processing');
         
-        // --- PROMPT SIMPLIFICADO ---
-        // Pedimos que transcriba lo mejor posible, incluyendo palabras de puntuación.
         const transcriptPromptParts = [
             { text: `Transcribe el siguiente audio médico. Transcribe las palabras de puntuación como "punto" o "coma" como texto literal.` },
             { inline_data: { mime_type: "audio/webm", data: base64Audio } }
@@ -60,27 +58,27 @@ export async function transcribeAndPolishAudio(base64Audio) {
         throw new Error(`Fallo en la transcripción: ${e.message}`);
     }
     
-    console.log("%c--- INICIO PROCESAMIENTO DE TEXTO ---", "color: orange; font-weight: bold;");
+    // --- INICIO PROCESAMIENTO DE TEXTO ---
 
-    // Paso 1: Limpiar artefactos básicos (comillas, etc.)
+    // 1. Limpieza básica de artefactos de la IA
     const cleanedText = cleanupArtifacts(transcribedText);
-    console.log('%c1. Texto de la IA (limpio):', 'color: teal;', JSON.stringify(cleanedText));
 
-    // Paso 2: Aplicamos NUESTRAS reglas sobre el texto de la IA
-    // Esto añade nuestra puntuación dictada. Ej: "hola. coma" -> "hola. ,"
+    // 2. Aplicar NUESTRAS reglas de puntuación (ej: "punto" -> ".")
     const textWithBothPunctuations = applyPunctuationRules(cleanedText);
-    console.log('%c2. Texto con puntuación de IA + dictado:', 'color: purple;', JSON.stringify(textWithBothPunctuations));
 
-    // Paso 3: Limpiamos la puntuación duplicada o mal formada
+    // 3. Limpiar puntuación duplicada o conflictiva
     const textWithCleanPunctuation = cleanupDoublePunctuation(textWithBothPunctuations);
-    console.log('%c3. Texto después de LIMPIAR puntuación combinada:', 'color: red;', JSON.stringify(textWithCleanPunctuation));
     
-    // Paso 4: Capitalización y correcciones de vocabulario
-    let finalProcessing = capitalizeSentencesProperly(textWithCleanPunctuation);
-    finalProcessing = applyAllUserCorrections(finalProcessing, AppState.customVocabulary);
-    console.log('%c4. Texto FINAL (capitalizado y corregido):', 'color: blue; font-weight: bold;', JSON.stringify(finalProcessing));
-    
-    console.log("%c--- FIN PROCESAMIENTO DE TEXTO ---", "color: orange; font-weight: bold;");
+    // 4. Capitalizar frases
+    let processedText = capitalizeSentencesProperly(textWithCleanPunctuation);
+
+    // 5. Aplicar el vocabulario personalizado del usuario (ej: "abrir parentesis" -> "(")
+    processedText = applyAllUserCorrections(processedText, AppState.customVocabulary);
+
+    // 6. ¡PASO FINAL! Normalizar espaciado de paréntesis
+    const finalProcessing = normalizeParenthesesSpacing(processedText);
+
+    console.log("Texto FINAL (tras normalizar paréntesis):", JSON.stringify(finalProcessing));
     console.groupEnd();
     return finalProcessing;
 }
