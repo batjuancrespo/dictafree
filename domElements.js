@@ -43,7 +43,8 @@ const elementSelectors = {
 
     // Elementos para la transición Batman
     batmanTransitionOverlay: 'batman-transition-overlay',
-    batmanTransitionAudio: 'batman-transition-audio'
+    batmanTransitionAudio: 'batman-transition-audio',
+    batmanTransitionGif: 'batman-transition-gif'
 };
 
 // Exportamos un objeto vacío que será poblado más tarde.
