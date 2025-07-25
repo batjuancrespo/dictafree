@@ -123,14 +123,13 @@
     </div>
 
     <!-- ====================================================== -->
-    <!-- 3. VISTA DEL JUANIZADOR (CON EL INTERRUPTOR ELIMINADO) -->
+    <!-- 3. VISTA DEL JUANIZADOR                                -->
     <!-- ====================================================== -->
     <div id="juanizador-container" style="display: none;">
         <header class="page-header">
             <h1>Asistente de Informes Radiológicos</h1>
             <div class="header-controls">
                 <button id="backToDictationBtn" class="btn btn-danger">Volver a dictado</button>
-                <!-- ¡ELEMENTO ELIMINADO DE AQUÍ! -->
             </div>
         </header>
         <div class="juanizador-section technique-selector">
@@ -206,6 +205,14 @@
             <div class="modal-actions"><button id="modalAddNewRuleButtonVocab" class="btn-record">Añadir Nueva Regla</button></div>
         </div>
     </div>
+
+    <!-- ====================================================== -->
+    <!-- 5. ELEMENTOS PARA LA TRANSICIÓN DE BATMAN              -->
+    <!-- ====================================================== -->
+    <div id="batman-transition-overlay">
+        <img id="batman-transition-logo" src="batman-transition-logo.png" alt="Batman Transition">
+    </div>
+    <audio id="batman-transition-audio" src="batman-transition-sound.mp3" preload="auto"></audio>
 
     <!-- PUNTO DE ENTRADA A TODA LA LÓGICA MODULARIZADA -->
     <script type="module" src="app.js"></script> 
