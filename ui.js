@@ -130,21 +130,28 @@ export async function copyFullReportToClipboard(showStatus = true) {
             setStatus("¡Informe completo copiado!", "success", 2000);
         }
 
-        // --- INICIO DE LA LÓGICA DE TRANSICIÓN ---
-        const { batmanTransitionOverlay, batmanTransitionAudio } = DOMElements;
+        // --- INICIO DE LA LÓGICA DE TRANSICIÓN CON GIF ---
+        const { batmanTransitionOverlay, batmanTransitionAudio, batmanTransitionGif } = DOMElements;
 
-        if (batmanTransitionOverlay && batmanTransitionAudio) {
+        if (batmanTransitionOverlay && batmanTransitionAudio && batmanTransitionGif) {
+            // 1. Muestra el overlay y el GIF
+            batmanTransitionOverlay.classList.add('active');
+            batmanTransitionGif.style.display = 'block';
+            
+            // 2. Reinicia el GIF añadiendo un timestamp aleatorio a la URL.
+            // Esto fuerza al navegador a recargarlo y reproducirlo desde el principio.
+            batmanTransitionGif.src = `batman-transition.gif?t=${new Date().getTime()}`;
+
+            // 3. Reproduce el sonido
             batmanTransitionAudio.currentTime = 0;
             batmanTransitionAudio.play().catch(e => console.error("Error al reproducir audio:", e));
-
-            batmanTransitionOverlay.classList.add('active');
-
-            // Oculta la transición después de que la animación termine
-            // El tiempo debe coincidir con la duración de la animación en CSS (1.2s)
-            // más un pequeño margen.
+            
+            // 4. Oculta todo después de que el GIF y el sonido hayan terminado.
+            // Ajusta este tiempo (en ms) a la duración de tu GIF.
             setTimeout(() => {
                 batmanTransitionOverlay.classList.remove('active');
-            }, 1300); // 1.3 segundos
+                batmanTransitionGif.style.display = 'none';
+            }, 2500); // 2.5 segundos (ajustar si es necesario)
         }
         // --- FIN DE LA LÓGICA DE TRANSICIÓN ---
 
