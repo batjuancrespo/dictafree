@@ -366,50 +366,44 @@ body.logged-in #auth-container { display: none !important; }
 
 
 /* ==========================================================================
-   Efecto de Transición Batman (VERSIÓN DEFINITIVA CON SVG MASK)
+   Efecto de Transición Batman (VERSIÓN DEFINITIVA CON GIF)
    ========================================================================== */
 
 #batman-transition-overlay {
     position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(0); /* Estado inicial: centrado e invisible */
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
     
-    /* Hacemos que sea un círculo gigante para asegurar que cubra las esquinas */
-    width: 200vw; 
-    height: 200vw;
-    border-radius: 50%;
-    
-    /* El fondo vibrante que se verá a través de la máscara */
-    background: radial-gradient(circle, #ffde00 0%, #ff8c00 40%, #e8491e 100%);
+    /* Fondo negro semitransparente para atenuar la página de fondo */
+    background: rgba(0, 0, 0, 0.7);
 
-    /* Oculto por defecto y sin afectar a los clics */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    /* Oculto por defecto */
     opacity: 0;
+    visibility: hidden;
     pointer-events: none;
     z-index: 9999;
-
-    /* ¡LA MAGIA DEL SVG! Aplicamos la forma que definimos en el HTML */
-    clip-path: url(#batman-mask-shape);
-    -webkit-clip-path: url(#batman-mask-shape); /* Compatibilidad */
     
-    /* Avisamos al navegador que animaremos esto para un mejor rendimiento */
-    will-change: transform, opacity;
+    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
 }
 
-/* Estado activo para mostrar y animar la transición */
+/* Estado activo para mostrar la transición */
 #batman-transition-overlay.active {
     opacity: 1;
-    animation: bat-wipe-svg 1.2s cubic-bezier(0.6, 0.04, 0.98, 0.335) forwards;
+    visibility: visible;
 }
 
-/* Definición de la animación de crecimiento para llenar la pantalla */
-@keyframes bat-wipe-svg {
-    0% {
-        transform: translate(-50%, -50%) scale(0);
-        opacity: 1;
-    }
-    100% {
-        transform: translate(-50%, -50%) scale(1); /* Crece hasta llenar la pantalla */
-        opacity: 1;
-    }
+#batman-transition-gif {
+    /* El GIF se ajusta para llenar la pantalla sin distorsionarse */
+    width: 100vw;
+    height: 100vh;
+    object-fit: contain; /* 'contain' asegura que se vea todo el GIF. Usa 'cover' si prefieres que llene la pantalla sin bordes. */
+
+    /* Oculto por defecto, se mostrará con JS */
+    display: none;
 }
