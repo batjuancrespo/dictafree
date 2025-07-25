@@ -1,7 +1,8 @@
 // juanizador.js
-// VERSIÓN CON GENERACIÓN DE TÉCNICA DETERMINISTA Y ENSAMBLAJE DE INFORME CONTROLADO
+// VERSIÓN CON TODAS LAS MEJORAS FINALES
 
 import { DOMElements } from './domElements.js';
+import { triggerBatmanTransition, updateCopyButtonState } from './ui.js';
 import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
 
 const API_KEY = 'AIzaSyBsKWbE6KgNaolK9BxDNDdviNw3pM7sOv0';
@@ -23,7 +24,7 @@ const anatomicalCategories = [
     { id: 10, name: "Líquido libre o adenopatías intra-abdominales", normal: "No se observa líquido libre ni adenopatías intra-abdominales de aspecto patológico." },
     { id: 11, name: "Aorta y grandes vasos mesentéricos", normal: "Aorta y grandes vasos mesentéricos de calibre normal, sin hallazgos significativos." },
     { id: 12, name: "Esqueleto axial", normal: "Esqueleto axial incluido en el estudio sin lesiones focales ni anomalías morfológicas relevantes." },
-    { id: 13, name: "Otros hallazgos", normal: null }, // Esta categoría no tiene frase de normalidad
+    { id: 13, name: "Otros hallazgos", normal: null },
     { id: 14, name: "Bases pulmonares incluidas en el estudio", normal: "En las bases pulmonares incluidas en el estudio no se observan hallazgos patológicos de significación." },
     { id: 15, name: "Hemiabdomen superior incluido en el estudio", normal: "En el hemiabdomen superior incluido en el estudio no se objetivan hallazgos relevantes." }
 ];
@@ -75,9 +76,6 @@ async function categorizeFindings() {
     }
 }
 
-/**
- * Genera el texto de la técnica de forma determinista basado en los selectores.
- */
 function generateTechniqueText() {
     const tech = DOMElements.juanizadorImagingTechnique.value;
     const withContrast = DOMElements.juanizadorContrastUse.value === 'con';
@@ -118,9 +116,6 @@ function generateTechniqueText() {
     return "";
 }
 
-/**
- * Genera el informe final pidiendo el contenido a la IA y formateándolo en JS.
- */
 async function generateCompleteReport() {
     if (!DOMElements.juanizadorCategorizeBtn.dataset.categorized) {
         alert('Primero debe categorizar los hallazgos.');
@@ -130,7 +125,6 @@ async function generateCompleteReport() {
     setLoadingState('juanizadorReportLoading', true);
     DOMElements.juanizadorFinalReport.textContent = 'Generando contenido del informe...';
 
-    // 1. Recopilar contexto y construir listas
     const tech = DOMElements.juanizadorImagingTechnique.value;
     const vocabularyInstructions = { 'tac': "TAC", 'rm': "Resonancia Magnética (RM)", 'eco': "Ecografía" };
     const modalityInstruction = vocabularyInstructions[tech] || "genérica";
@@ -138,18 +132,13 @@ async function generateCompleteReport() {
     const reportCategories = anatomicalCategories.filter(c => window.availableCategories.includes(c.id));
     
     let findingsList = [];
-    let normalList = [];
-    
     reportCategories.forEach(category => {
         const findings = categorizedFindings[category.id.toString()];
         if (findings && findings.length > 0) {
             findingsList.push({ category: category.name, findings: findings.join('. ') });
-        } else if (category.normal) {
-            normalList.push(category.name);
         }
     });
 
-    // 2. Construir el prompt para la IA
     const finalPrompt = `
 Eres un radiólogo experto. Tu tarea es generar el texto para un informe.
 Usa vocabulario de ${modalityInstruction}.
@@ -164,22 +153,13 @@ Basado SOLAMENTE en los hallazgos anormales de la lista anterior, genera una con
 **Formato de Salida Obligatorio:**
 Devuelve un único objeto JSON con dos claves: "report_paragraphs" y "conclusion".
 "report_paragraphs" debe ser un objeto donde cada clave es el nombre de la categoría y el valor es el párrafo que has redactado.
-Si la lista de hallazgos anormales está vacía, "report_paragraphs" debe ser un objeto vacío {}.
-
-Ejemplo de formato si hay hallazgos:
-{
-  "report_paragraphs": {
-    "Hígado, porta y confluente esplenomesentérico venoso": "El hígado presenta contornos lobulados...",
-    "Bazo, glándulas suprarrenales...": "El bazo está aumentado de tamaño..."
-  },
-  "conclusion": "Signos de hepatopatía crónica con esplenomegalia."
-}`;
+Si la lista de hallazgos anormales está vacía, "report_paragraphs" debe ser un objeto vacío {}.`;
 
     let aiContent;
     try {
         const response = await queryGeminiAPI(finalPrompt);
         const jsonMatch = response.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) throw new Error('La respuesta de la IA no es un JSON válido.');
+        if (!jsonMatch) throw new Error('La respuesta de la API no es un JSON válido.');
         aiContent = JSON.parse(jsonMatch[0]);
     } catch (e) {
         DOMElements.juanizadorFinalReport.textContent = "Error al generar el contenido con la IA. Revisa la consola.";
@@ -187,7 +167,6 @@ Ejemplo de formato si hay hallazgos:
         return;
     }
 
-    // 3. Ensamblaje final del informe en JavaScript
     DOMElements.juanizadorFinalReport.textContent = 'Ensamblando informe final...';
 
     const techniqueText = generateTechniqueText();
@@ -202,12 +181,11 @@ Ejemplo de formato si hay hallazgos:
     });
 
     const conclusionText = aiContent.conclusion || "No se observan alteraciones radiológicas significativas.";
-    const fullReport = `TÉCNICA:\n${techniqueText}\n\nHALLAZGOS:\n${findingsText.trim()}\n\nCONCLUSIÓN:\n${conclusionText.trim()}`;
+    const fullReport = `${techniqueText}\n\n${findingsText.trim()}\n\n${conclusionText.trim()}`;
     
     DOMElements.juanizadorFinalReport.textContent = fullReport;
     setLoadingState('juanizadorReportLoading', false);
 }
-
 
 function displayCategorizedFindings() {
     const container = DOMElements.juanizadorCategorizedContent;
@@ -231,7 +209,6 @@ function displayCategorizedFindings() {
     if (!hasFindings) {
         container.innerHTML = '<p style="text-align:center; color: var(--text-secondary);">No se encontraron hallazgos para categorizar.</p>';
     }
-    // Marcamos como categorizado incluso si no hay hallazgos, para poder generar un informe de normalidad.
     DOMElements.juanizadorCategorizeBtn.dataset.categorized = "true";
 }
 
@@ -286,9 +263,38 @@ export function initializeJuanizador(textToAnalyze) {
     if (!DOMElements.juanizadorContainer.dataset.initialized) {
         console.log("DEBUG: Asignando listeners del Juanizador por primera vez.");
         
-        safeAddEventListener('juanizadorBackToDictationBtn', 'click', () => window.switchToDictationView());
+        safeAddEventListener('juanizadorBackToDictationBtn', 'click', () => {
+            const reportText = DOMElements.juanizadorFinalReport.textContent;
+            const placeholderText = 'El informe generado aparecerá aquí...';
+            
+            if (reportText && reportText !== placeholderText) {
+                const technique = generateTechniqueText();
+                const bodyOfReport = reportText.replace(technique, '').trim();
+                
+                DOMElements.headerArea.value = technique;
+                DOMElements.polishedTextarea.value = bodyOfReport;
+                updateCopyButtonState();
+            }
+            window.switchToDictationView();
+        });
+        
         safeAddEventListener('juanizadorCategorizeBtn', 'click', categorizeFindings);
         safeAddEventListener('juanizadorGenerateReportBtn', 'click', generateCompleteReport);
+        
+        safeAddEventListener('juanizadorCopyReportBtn', 'click', () => {
+            const textToCopy = DOMElements.juanizadorFinalReport.textContent;
+            if (textToCopy && textToCopy !== 'El informe generado aparecerá aquí...') {
+                navigator.clipboard.writeText(textToCopy)
+                    .then(() => {
+                        alert("Informe final copiado al portapapeles.");
+                        triggerBatmanTransition();
+                    })
+                    .catch(err => console.error("Error al copiar el informe final:", err));
+            } else {
+                alert("No hay informe generado para copiar.");
+            }
+        });
+
         safeAddEventListener('juanizadorClearBtn', 'click', () => {
             if (DOMElements.juanizadorTranscriptArea) DOMElements.juanizadorTranscriptArea.value = '';
             if (DOMElements.juanizadorCategorizedContent) DOMElements.juanizadorCategorizedContent.innerHTML = '';
@@ -315,4 +321,4 @@ export function initializeJuanizador(textToAnalyze) {
     }
     
     updateAvailableCategories();
-}
+}```
