@@ -4,16 +4,20 @@
 export function cleanupArtifacts(text) {
     if (!text || typeof text !== 'string') return text || "";
     let cleanedText = text.trim();
+    // Elimina comillas de inicio y fin que a veces añade la IA
     if (cleanedText.startsWith('"') && cleanedText.endsWith('"') && cleanedText.length > 2) {
         cleanedText = cleanedText.substring(1, cleanedText.length - 1).trim();
     }
+    // Reemplaza espacios múltiples por uno solo
     return cleanedText.replace(/ +/g, ' ');
 }
 
 export function capitalizeSentencesProperly(text) {
     if (!text || typeof text !== 'string' || text.trim() === "") return text;
     let processedText = text.trim();
+    // Capitaliza la primera letra de todo el texto
     processedText = processedText.charAt(0).toUpperCase() + processedText.slice(1);
+    // Capitaliza las letras que vienen después de un punto, signo de exclamación/interrogación o salto de línea, seguido de espacios.
     processedText = processedText.replace(/([.!?\n]\s*)([a-záéíóúüñ])/g, 
         (match, punctuationAndSpace, letter) => punctuationAndSpace + letter.toUpperCase()
     );
@@ -32,10 +36,14 @@ export function applyPunctuationRules(text) {
         'dospuntos': ':'
     };
 
+    // Ordenamos las claves de la más larga a la más corta para evitar reemplazos parciales.
     const sortedKeys = Object.keys(punctuationMap).sort((a, b) => b.length - a.length);
 
     let processedText = text;
+    // Itera sobre las claves ORDENADAS
     for (const key of sortedKeys) {
+        // La expresión regular maneja claves con espacios (ej. "punto y aparte")
+        // y busca la clave como una palabra completa (\b) de forma global (g) y sin importar mayúsculas/minúsculas (i)
         const regex = new RegExp(`\\b${key.replace(/\s/g, '\\s')}\\b`, 'gi');
         processedText = processedText.replace(regex, punctuationMap[key]);
     }
@@ -44,7 +52,7 @@ export function applyPunctuationRules(text) {
 }
 
 /**
- * ¡VERSIÓN DEFINITIVA! Limpia y normaliza la puntuación usando una jerarquía.
+ * Limpia y normaliza la puntuación usando una jerarquía.
  */
 export function cleanupDoublePunctuation(text) {
     if (!text) return "";
@@ -66,7 +74,6 @@ export function cleanupDoublePunctuation(text) {
     let cleanedText = text;
     
     // El regex busca una agrupación de 2 o más caracteres de puntuación y/o espacios.
-    // Esto encuentra " , .\n. " pero ignora un simple "." o ",".
     cleanedText = cleanedText.replace(/([.,:;!?\n][\s.,:;!?\n]*)/g, punctuationReplacer);
 
     // PASADA FINAL DE ESPACIADO: Asegura un formato impecable.
@@ -80,11 +87,27 @@ export function cleanupDoublePunctuation(text) {
     return cleanedText;
 }
 
+/**
+ * ¡NUEVA FUNCIÓN! Limpia el espaciado y la puntuación alrededor de los paréntesis.
+ */
+export function normalizeParenthesesSpacing(text) {
+    if (!text) return "";
+    return text
+        // Elimina espacio DESPUÉS de abrir paréntesis: "( texto" -> "(texto"
+        .replace(/\(\s+/g, '(')
+        // Elimina espacio ANTES de cerrar paréntesis: "texto )" -> "texto)"
+        .replace(/\s+\)/g, ')')
+        // Elimina comas ANTES de abrir paréntesis, manteniendo un espacio: "palabra, (" -> "palabra ("
+        .replace(/,\s*\(/g, ' (')
+        // Mueve la puntuación final DESPUÉS de cerrar paréntesis: ") ." -> ")."
+        .replace(/\)\s*([.,:;!?])/g, ')$1');
+}
 
 export function applyAllUserCorrections(text, customVocabulary) {
     if (!text || Object.keys(customVocabulary).length === 0) return text;
     
     let processedText = text;
+    // Ordena las claves por longitud (de más larga a más corta) para evitar reemplazos parciales
     const sortedCustomKeys = Object.keys(customVocabulary).sort((a, b) => b.length - a.length);
     
     for (const errorKey of sortedCustomKeys) {
@@ -100,6 +123,7 @@ export function applyAllUserCorrections(text, customVocabulary) {
 }
 
 export function escapeRegExp(string) {
+    // Escapa caracteres especiales para que puedan ser usados en una expresión regular
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
