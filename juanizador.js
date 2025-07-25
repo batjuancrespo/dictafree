@@ -1,5 +1,5 @@
 // juanizador.js
-// VERSIÓN CON TODAS LAS MEJORAS FINALES
+// VERSIÓN CON TODAS LAS MEJORAS FINALES Y SINTAXIS CORREGIDA
 
 import { DOMElements } from './domElements.js';
 import { triggerBatmanTransition, updateCopyButtonState } from './ui.js';
@@ -159,7 +159,7 @@ Si la lista de hallazgos anormales está vacía, "report_paragraphs" debe ser un
     try {
         const response = await queryGeminiAPI(finalPrompt);
         const jsonMatch = response.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) throw new Error('La respuesta de la API no es un JSON válido.');
+        if (!jsonMatch) throw new Error('La respuesta de la IA no es un JSON válido.');
         aiContent = JSON.parse(jsonMatch[0]);
     } catch (e) {
         DOMElements.juanizadorFinalReport.textContent = "Error al generar el contenido con la IA. Revisa la consola.";
@@ -321,4 +321,4 @@ export function initializeJuanizador(textToAnalyze) {
     }
     
     updateAvailableCategories();
-}```
+}
