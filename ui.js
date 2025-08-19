@@ -132,8 +132,8 @@ export function getCombinedText() {
     const h = headerArea.value.trim();
     const r = polishedTextarea.value.trim();
     let text = "";
-    if (h) text += `TÉCNICA:\n${h}\n\n`;
-    if (r) text += `HALLAZGOS:\n${r}`;
+    if (h) text += `${h}\n\n`;
+    if (r) text += `${r}`;
     return text;
 }
 
