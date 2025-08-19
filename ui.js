@@ -11,12 +11,13 @@ import { saveUserVocabularyToFirestore } from './api.js';
 export function triggerBatmanTransition() {
     const { batmanTransitionOverlay, batmanTransitionAudio, batmanTransitionGif } = DOMElements;
 
+    // Esta comprobación es clave. Si alguno de estos es null, la función no hará nada.
     if (batmanTransitionOverlay && batmanTransitionAudio && batmanTransitionGif) {
         // Muestra el overlay y el GIF
         batmanTransitionOverlay.classList.add('active');
         batmanTransitionGif.style.display = 'block';
         
-        // Reinicia el GIF forzando la recarga
+        // Reinicia el GIF forzando la recarga (MUY IMPORTANTE)
         batmanTransitionGif.src = `batman-transition.gif?t=${new Date().getTime()}`;
 
         // Reproduce el sonido
@@ -28,9 +29,11 @@ export function triggerBatmanTransition() {
             batmanTransitionOverlay.classList.remove('active');
             batmanTransitionGif.style.display = 'none';
         }, 1400); // 1.4 segundos
+    } else {
+        // Si hay un problema, este mensaje aparecerá en la consola.
+        console.error("Error en la animación: No se encontraron todos los elementos necesarios (overlay, audio, gif).");
     }
 }
-
 export function applyTheme(theme) {
     document.body.setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
