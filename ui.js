@@ -126,6 +126,10 @@ export function updateCopyButtonState() {
     }
 }
 
+/**
+ * === FUNCIÓN MODIFICADA ===
+ * Combina el texto de la técnica y el informe sin añadir los títulos "TÉCNICA:" y "HALLAZGOS:".
+ */
 export function getCombinedText() {
     const { headerArea, polishedTextarea } = DOMElements;
     if (!headerArea || !polishedTextarea) return "";
@@ -161,6 +165,7 @@ export async function copyFullReportToClipboard(showStatus = true) {
         if (showStatus) {
             setStatus("¡Informe completo copiado!", "success", 2000);
         }
+        // La llamada a la animación está aquí, asegurando que se ejecute después de una copia exitosa.
         triggerBatmanTransition();
     } catch (e) {
         console.error('Error al copiar el texto:', e);
