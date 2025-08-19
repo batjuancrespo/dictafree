@@ -129,12 +129,22 @@ export function updateCopyButtonState() {
 export function getCombinedText() {
     const { headerArea, polishedTextarea } = DOMElements;
     if (!headerArea || !polishedTextarea) return "";
-    const h = headerArea.value.trim();
-    const r = polishedTextarea.value.trim();
-    let text = "";
-    if (h) text += `TÉCNICA:\n${h}\n\n`;
-    if (r) text += `HALLAZGOS:\n${r}`;
-    return text;
+    
+    const tecnicaTexto = headerArea.value.trim();
+    const informeTexto = polishedTextarea.value.trim();
+    
+    // Creamos un array para almacenar las partes del texto que no estén vacías.
+    const partes = [];
+    if (tecnicaTexto) {
+        partes.push(tecnicaTexto);
+    }
+    if (informeTexto) {
+        partes.push(informeTexto);
+    }
+    
+    // Unimos las partes con un doble salto de línea.
+    // Si solo hay una parte, devolverá esa parte sin saltos de línea extra.
+    return partes.join('\n\n');
 }
 
 export async function copyFullReportToClipboard(showStatus = true) {
