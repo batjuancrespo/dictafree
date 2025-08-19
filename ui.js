@@ -165,7 +165,7 @@ export async function copyFullReportToClipboard(showStatus = true) {
         if (showStatus) {
             setStatus("¡Informe completo copiado!", "success", 2000);
         }
-        // La llamada a la animación está aquí, asegurando que se ejecute después de una copia exitosa.
+        // ¡LÍNEA CRÍTICA! Nos aseguramos de que la animación se active también aquí.
         triggerBatmanTransition();
     } catch (e) {
         console.error('Error al copiar el texto:', e);
