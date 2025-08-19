@@ -286,10 +286,9 @@ export function initializeJuanizador(textToAnalyze) {
             if (textToCopy && textToCopy !== 'El informe generado aparecerá aquí...') {
                 navigator.clipboard.writeText(textToCopy)
                     .then(() => {
-                        // ¡CAMBIO CLAVE! Se elimina el alert.
-                        // alert("Informe final copiado al portapapeles.");
-                        console.log("Informe final copiado al portapapeles.");
-                        triggerBatmanTransition(); // Lanza la animación
+                        console.log("Informe final del Juanizador copiado al portapapeles.");
+                        // ¡LÍNEA CRÍTICA! Nos aseguramos de que la animación se active aquí.
+                        triggerBatmanTransition(); 
                     })
                     .catch(err => {
                         console.error("Error al copiar el informe final:", err);
