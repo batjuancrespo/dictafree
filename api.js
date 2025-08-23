@@ -9,7 +9,7 @@ import {
     capitalizeSentencesProperly, applyAllUserCorrections, normalizeParenthesesSpacing
 } from './utils.js';
 
-const userApiKey = 'AIzaSyBsKWbE6KgNaolK9BxDNDdviNw3pM7sOv0'; // Clave de Gemini
+const userApiKey = 'AIzaSyCf_sNu2voPjE2sc5VAL0R470MwMAFYssA'; // Clave de Gemini
 
 async function callGeminiAPI(modelName, promptParts) {
     if (!userApiKey) throw new Error('No se encontró la API Key de Gemini.');
