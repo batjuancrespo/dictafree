@@ -5,7 +5,7 @@ import { DOMElements } from './domElements.js';
 import { triggerBatmanTransition, updateCopyButtonState } from './ui.js';
 import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
 
-const API_KEY = 'AIzaSyBsKWbE6KgNaolK9BxDNDdviNw3pM7sOv0';
+const API_KEY = 'AIzaSyCf_sNu2voPjE2sc5VAL0R470MwMAFYssA';
 const MODEL_NAME = 'gemini-2.0-flash-lite';
 const genAI = new GoogleGenerativeAI(API_KEY);
 const model = genAI.getGenerativeModel({ model: MODEL_NAME });
